@@ -12,7 +12,7 @@ An open source operating system written in NASM and C, with the goal of demystif
 
 ---
 ## Installation
-### Virtual Machine (QEMU)
+### (For developers) Virtual Machine (QEMU)
 *This guide requires you to be on a Linux based system, if on Windows, then it is recommended to install the "Windows Subsystem for Linux" (WSL)*
 *To install the WSL, simply run the command:* `wsl --install` *and follow the on-screen prompts, before restarting your system.*
 
@@ -28,8 +28,14 @@ An open source operating system written in NASM and C, with the goal of demystif
    nasm -v
    gcc --version
    ```
-4) Locate `source/run.sh` and run `chmod +x run.sh` then `./run.sh`
-5) Enjoy your emulated WaffleOS experience! 🎉🎉
+4) Next, we have to add the new directory ("/usr/local/i386elfgcc/bin") to the path variable:
+    - Run `vim .bashrc`
+    - Add "`export PATH="$PATH:/usr/local/i386-elf-gcc/bin"`" to the end of the file
+    - Add "`export PATH="$PATH:/usr/local/i386-elf-ld/bin"`" to the end of the file
+    - Save and exit (`:x`)
+5) Restart your system
+6) Locate `source/run.sh` and run `chmod +x run.sh` then `./run.sh`
+7) Enjoy your emulated WaffleOS experience! 🎉🎉
 
 ### x86 based device
 *TBD*
