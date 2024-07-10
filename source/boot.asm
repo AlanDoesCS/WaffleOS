@@ -11,6 +11,9 @@ start:
     mov si, thanks_str
     call print_string
 
+    mov si, heart_str
+    call print_string
+
     ; clear registers
     xor ax, ax
     mov ds, ax
@@ -39,6 +42,7 @@ hang:
 ; strings:
 booting_str db 'Booting WaffleOS...', 0
 thanks_str db 13, 10, 13, 10, 'Thank you for using WaffleOS! :)', 13, 10, 0
+heart_str db 13, 10, 13, 10, '  __  __', 13, 10, ' /  \/  \', 13, 10, '|        |', 13, 10, ' \      /', 13, 10, '  \    /', 13, 10, '    \/', 13, 10, 0
 
 times 510-($-$$) db 0   ; Make total bootloader size equal to 510 bytes
 dw 0xAA55               ; Boot signature (+2 bytes)
