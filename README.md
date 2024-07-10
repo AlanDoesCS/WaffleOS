@@ -8,7 +8,7 @@ An open source operating system written in NASM and C, with the goal of demystif
 
 ---
 ## Features
-*WaffleOS is currently very early stages, so it will be prone to errors*
+*WaffleOS is currently very early stages, so it may be prone to errors*
 
 ---
 ## Installation
