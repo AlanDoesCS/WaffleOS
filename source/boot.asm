@@ -11,6 +11,14 @@ start:
     mov si, thanks_str
     call print_string
 
+    ; clear registers
+    xor ax, ax
+    mov ds, ax
+    mov es, ax
+    mov ss, ax
+
+    mov sp, 0x7C00      ; set stack pointer to top memory address
+
     jmp hang
 
 print_string:           ; print string of characters
