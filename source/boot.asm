@@ -30,7 +30,7 @@ hang:
 
 ; strings:
 booting_str db 'Booting WaffleOS...', 0
-thanks_str db 13, 10, 13, 10, 'Thank you for using WaffleOS! :)', 0
+thanks_str db 13, 10, 13, 10, 'Thank you for using WaffleOS! :)', 13, 10, 0
 
 times 510-($-$$) db 0   ; Make total bootloader size equal to 510 bytes
 dw 0xAA55               ; Boot signature (+2 bytes)
