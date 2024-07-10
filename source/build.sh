@@ -1,0 +1,1 @@
+nasm -f bin boot.asm -o boot.bin  # Assemble the bootloader
