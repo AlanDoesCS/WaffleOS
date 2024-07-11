@@ -4,7 +4,10 @@
 nasm -f bin boot.asm -o boot.bin
 
 i386-elf-gcc -ffreestanding -nostdlib -c kernel.c -o kernel.o -m32
-i386-elf-ld -o kernel.bin -Tlinker.ld kernel.o --oformat binary
+i386-elf-gcc -ffreestanding -nostdlib -c display.c -o display.o -m32
+
+# Link the kernel
+i386-elf-ld -o kernel.bin -Tlinker.ld kernel.o display.o --oformat binary
 
 cat boot.bin kernel.bin > os-image.bin
 
