@@ -1,7 +1,10 @@
 BITS 16
 org 0x7C00
 
-start:
+KERNEL_ENTRY equ 0x1000
+BOOT_DISK: db 0
+
+_start:
     mov ax, 0x0003      ; Text mode
     int 0x10            ; Interrupt which calls BIOS video services
 
@@ -11,17 +14,39 @@ start:
     mov si, thanks_str
     call print_string
 
-    mov si, heart_str
-    call print_string
+    mov [BOOT_DISK], dl
 
     ; clear registers
     xor ax, ax
     mov ds, ax
     mov es, ax
     mov ss, ax
-
     mov sp, 0x7C00      ; set stack pointer to top memory address
 
+    call load_kernel
+
+    jmp KERNEL_ENTRY
+
+load_kernel:
+    mov bx, KERNEL_ENTRY
+    mov dh, 10          ; might be too low
+    mov ah, 0x02        ; BIOD read sectors
+    mov al, dh          ; num sectors
+    mov ch, 0x00        ; cylinder
+    mov dh, 0x00        ; head
+    mov cl, 0x02        ; sector
+    mov dl, [BOOT_DISK]
+    int 0x13
+    jc load_err         ; error handling if loading fails
+
+    ; switch to text mode
+    mov ah, 0x0
+    mov al, 0x3
+    int 0x10
+
+load_err:
+    mov si, load_err_str
+    call print_string
     jmp hang
 
 print_string:           ; print string of characters
@@ -42,7 +67,7 @@ hang:
 ; strings:
 booting_str db 'Booting WaffleOS...', 0
 thanks_str db 13, 10, 13, 10, 'Thank you for using WaffleOS! :)', 13, 10, 0
-heart_str db 13, 10, 13, 10, '  __  __', 13, 10, ' /  \/  \', 13, 10, '|        |', 13, 10, ' \      /', 13, 10, '  \    /', 13, 10, '    \/', 13, 10, 0
+load_err_str db 'Error loading kernel', 0
 
 times 510-($-$$) db 0   ; Make total bootloader size equal to 510 bytes
 dw 0xAA55               ; Boot signature (+2 bytes)

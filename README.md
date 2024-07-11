@@ -29,9 +29,9 @@ An open source operating system written in NASM and C, with the goal of demystif
    gcc --version
    ```
 4) Next, add the new directory ("/usr/local/i386elfgcc/bin") to the path variable:
-    - Run `vim .bashrc`
-    - Add "`export PATH="$PATH:/usr/local/i386-elf-gcc/bin"`" to the end of the file
-    - Add "`export PATH="$PATH:/usr/local/i386-elf-ld/bin"`" to the end of the file
+    - Run `vim ~/.bashrc`
+    - Add "`export PATH="$PATH:/usr/local/i386elfgcc/bin"`" to the end of the file
+    - Add "`export PATH="$PATH:/usr/local/i386elfld/bin"`" to the end of the file
     - Save and exit (`:x`)
 5) Restart your system
 6) Locate `source/run.sh` and run `chmod +x run.sh` then `./run.sh`
