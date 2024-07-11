@@ -5,7 +5,7 @@ KERNEL_OFFSET equ 0x1000
 BOOT_DISK: db 0
 
 start:
-    mov [BOOT_DISK], dl
+    mov [BOOT_DISK], dl         ; boot drive/disk is stored in dl by BIOS
 
     mov si, MSG_REAL_MODE
     call print_string
@@ -15,54 +15,55 @@ start:
     mov si, MSG_LOAD_KERNEL
     call print_string
 
-    call switch_to_pm
-    jmp $
+    call switch_to_pm           ; switch to protected mode
+    jmp $                       ; hang (should be unreachable)
 
 load_kernel:
     mov bx, KERNEL_OFFSET
-    mov dh, 15
-    mov dl, [BOOT_DISK]
+    mov dh, 15                  ; load 15 sectors: 7.5KB
+    mov dl, [BOOT_DISK]         ; load from boot disk
     call disk_load
     ret
 
 disk_load:
     push dx
-    mov ah, 0x02
+    mov ah, 0x02                ; BIOS read sector
     mov al, dh
-    mov ch, 0x00
-    mov dh, 0x00
-    mov cl, 0x02
+    mov ch, 0x00                ; cylinder
+    mov dh, 0x00                ; head
+    mov cl, 0x02                ; start reading second sector
     int 0x13
     jc disk_error
     pop dx
     cmp dh, al
-    jne disk_error
+    jne disk_error              ; print err message if something goes wrong
     ret
 
 disk_error:
     mov si, DISK_ERROR_MSG
     call print_string
-    jmp $
+    jmp $                       ; hang
 
 print_string:
-    mov ah, 0x0e
+    mov ah, 0x0e                ; print char fn
 .loop:
     lodsb
-    cmp al, 0
+    cmp al, 0                   ; check for string termination
     je .done
     int 0x10
     jmp .loop
 .done:
     ret
 
-switch_to_pm:
+switch_to_pm:                   ; switch to protected mode
     cli
     lgdt [gdt_descriptor]
     mov eax, cr0
-    or eax, 0x1
+    or eax, 0x1                 ; protected mode bit
     mov cr0, eax
-    jmp CODE_SEG:init_pm
+    jmp CODE_SEG:init_pm        ; jump to 32 bit movde
 
+; 32 bit protected mode ------------------------------------------------------------------------
 BITS 32
 init_pm:
     mov ax, DATA_SEG
@@ -80,7 +81,8 @@ init_pm:
     jmp $
 
 gdt_start:
-    dq 0x0
+    dd 0x0
+    dd 0x0
 gdt_code:
     dw 0xffff
     dw 0x0
@@ -104,9 +106,9 @@ gdt_descriptor:
 CODE_SEG equ gdt_code - gdt_start
 DATA_SEG equ gdt_data - gdt_start
 
-MSG_REAL_MODE db "Started in 16-bit Real Mode", 13, 10, 0
-MSG_LOAD_KERNEL db "Loading kernel into memory", 13, 10, 0
-DISK_ERROR_MSG db "Disk read error!", 13, 10, 0
+MSG_REAL_MODE db "[BOOT] Started in 16-bit Real Mode", 13, 10, 0
+MSG_LOAD_KERNEL db "[BOOT] Loading kernel into memory", 13, 10, 0
+DISK_ERROR_MSG db "[BOOT] Disk read error!", 13, 10, 0
 
 times 510-($-$$) db 0
-dw 0xaa55
+dw 0xAA55
