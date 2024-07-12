@@ -90,22 +90,6 @@ void init_keyboard(void) {
 void reset_keyboard(void) {
     buffer_index = 0;
     line_ready = 0;
-
-    // remap the PIC
-    outb(0x20, 0x11);
-    outb(0xA0, 0x11);
-    outb(0x21, 0x20);
-    outb(0xA1, 0x28);
-    outb(0x21, 0x04);
-    outb(0xA1, 0x02);
-    outb(0x21, 0x01);    // 8086/88 mode
-    outb(0xA1, 0x01);
-    outb(0x21, 0x0);
-    outb(0xA1, 0x0);
-
-    // enable keyboard IRQ
-    outb(0x21, 0xFD);
-    outb(0xA1, 0xFF);
 }
 
 
@@ -114,5 +98,6 @@ char* read_line(void) {
     while (!line_ready) {
         __asm__("hlt");  // halt CPU until next interrupt
     }
+    outb(0x20, 0x20);
     return input_buffer;
 }
