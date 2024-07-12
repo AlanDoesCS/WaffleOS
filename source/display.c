@@ -34,6 +34,7 @@ void clear() {
     // go back to start
     current_row = 0;
     current_col = 0;
+    move_cursor(current_row, current_col);
 }
 
 

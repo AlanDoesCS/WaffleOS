@@ -1,20 +1,24 @@
 #!/bin/bash
 
-# Assemble bootloader
-nasm -f bin boot.asm -o boot.bin
-nasm -f elf32 interrupt.asm -o interrupt.o
-nasm -f elf32 io_functions.asm -o io_functions.o
+# Create builds directory if it doesn't exist
+mkdir -p ../builds
 
-i386-elf-gcc -ffreestanding -nostdlib -c kernel.c -o kernel.o -m32
-i386-elf-gcc -ffreestanding -nostdlib -c display.c -o display.o -m32
-i386-elf-gcc -ffreestanding -nostdlib -c keyboard.c -o keyboard.o -m32
-i386-elf-gcc -ffreestanding -nostdlib -c idt.c -o idt.o -m32
+# Assemble bootloader
+nasm -f bin boot.asm -o ../builds/boot.bin
+nasm -f elf32 interrupt.asm -o ../builds/interrupt.o
+nasm -f elf32 io_functions.asm -o ../builds/io_functions.o
+
+i386-elf-gcc -ffreestanding -nostdlib -c kernel.c -o ../builds/kernel.o -m32
+i386-elf-gcc -ffreestanding -nostdlib -c display.c -o ../builds/display.o -m32
+i386-elf-gcc -ffreestanding -nostdlib -c keyboard.c -o ../builds/keyboard.o -m32
+i386-elf-gcc -ffreestanding -nostdlib -c idt.c -o ../builds/idt.o -m32
+i386-elf-gcc -ffreestanding -nostdlib -c str.c -o ../builds/str.o -m32
 
 # Link the kernel
-i386-elf-ld -o kernel.bin -Tlinker.ld kernel.o display.o keyboard.o interrupt.o idt.o io_functions.o --oformat binary
+i386-elf-ld -o ../builds/kernel.bin -Tlinker.ld ../builds/kernel.o ../builds/display.o ../builds/keyboard.o ../builds/interrupt.o ../builds/idt.o ../builds/io_functions.o ../builds/str.o --oformat binary
 
-cat boot.bin kernel.bin > os-image.bin
+cat ../builds/boot.bin ../builds/kernel.bin > ../builds/bin/os-image.bin
 
-dd if=/dev/zero of=os-image.bin bs=512 count=2880
-dd if=boot.bin of=os-image.bin conv=notrunc
-dd if=kernel.bin of=os-image.bin seek=1 conv=notrunc
+dd if=/dev/zero of=../builds/bin/os-image.bin bs=512 count=2880
+dd if=../builds/boot.bin of=../builds/bin/os-image.bin conv=notrunc
+dd if=../builds/kernel.bin of=../builds/bin/os-image.bin seek=1 conv=notrunc

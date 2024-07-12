@@ -1,5 +1,6 @@
 #include "display.h"
 #include "keyboard.h"
+#include "str.h"
 
 void kernel_main(void) __attribute__((section(".text.kernel_entry")));
 
@@ -12,19 +13,22 @@ void kernel_main(void) {
 	init_keyboard();
 
 	println("");
-    println("                \xC9\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xBB");  // ╔══════════╗
-    println("                \xBA WaffleOS \xBA");                                // ║ WaffleOS ║
-    println("                \xC8\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xBC");  // ╚══════════╝
-
+    println("                                  \xC9\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xBB");  // ╔══════════╗
+    println("                                  \xBA WaffleOS \xBA");                                // ║ WaffleOS ║
+    println("                                  \xC8\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xBC");  // ╚══════════╝
 
 
     while(1) {
-        print("$ ");
+        print("root $ ");
         char* input = read_line();
-        println("");
-        print("You entered: ");
-        println(input);
 
-        line_ready = 0;
+        if (strcmp(input, "clear") == 0) {
+            clear();
+        } else {
+            // Default case: Print the entered command
+            print("Unrecognised command: ");
+            println(input);
+            println("");
+        }
     }
 }
