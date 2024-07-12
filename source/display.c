@@ -16,7 +16,7 @@ int current_col = 0;
 
 void move_cursor(int row, int col) {
     // Calculate the position in the VGA text mode buffer
-    int position = (row) * SCREEN_WIDTH + (col - 1);
+    int position = (row) * SCREEN_WIDTH + col;
 
     outb(0x3D4, 0x0F);          // Low cursor control register index
     outb(0x3D5, (unsigned char)(position & 0xFF)); // Low byte of position
@@ -58,7 +58,6 @@ void print_char(unsigned char c) {
 
         if (current_row > SCREEN_HEIGHT) {
             clear();
-            current_row = 0;
         }
     }
     move_cursor(current_row, current_col);

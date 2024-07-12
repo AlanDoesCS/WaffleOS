@@ -3,21 +3,28 @@
 
 void kernel_main(void) __attribute__((section(".text.kernel_entry")));
 
+extern volatile int line_ready;
+
 void kernel_main(void) {
     clear();
     println("[KERNEL] Kernel loaded successfully");
-    println("");
+
+	init_keyboard();
+
+	println("");
     println("                \xC9\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xBB");  // ╔══════════╗
     println("                \xBA WaffleOS \xBA");                                // ║ WaffleOS ║
     println("                \xC8\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xBC");  // ╚══════════╝
 
-    init_keyboard();
+
 
     while(1) {
-        print("Enter a command: ");
+        print("$ ");
         char* input = read_line();
         println("");
         print("You entered: ");
         println(input);
+
+        line_ready = 0;
     }
 }

@@ -43,11 +43,13 @@ void keyboard_handler(void) {
                 input_buffer[buffer_index] = '\0';
                 println("");
                 line_ready = 1;  // set flag
+
                 return;
             } else if (scancode == BACKSPACE_KEY && buffer_index > 0) { // backspace
                 buffer_index--;
                 input_buffer[buffer_index] = 0;
                 del_last_char();
+
             } else if (buffer_index < MAX_INPUT_LENGTH - 1) {
                 ascii = scancode_to_ascii[scancode];
                 if (ascii != 0) {
@@ -79,19 +81,37 @@ void init_keyboard(void) {
 
     // enable keyboard IRQ
     outb(0x21, 0xFD);
+    outb(0xA1, 0xFF);
+
+    println("[KERNEL] Keyboard initialized");
 }
 
 
 void reset_keyboard(void) {
     buffer_index = 0;
     line_ready = 0;
+
+    // remap the PIC
+    outb(0x20, 0x11);
+    outb(0xA0, 0x11);
+    outb(0x21, 0x20);
+    outb(0xA1, 0x28);
+    outb(0x21, 0x04);
+    outb(0xA1, 0x02);
+    outb(0x21, 0x01);    // 8086/88 mode
+    outb(0xA1, 0x01);
+    outb(0x21, 0x0);
+    outb(0xA1, 0x0);
+
+    // enable keyboard IRQ
+    outb(0x21, 0xFD);
+    outb(0xA1, 0xFF);
 }
 
 
 char* read_line(void) {
     reset_keyboard();
     while (!line_ready) {
-        // wait for Enter key
         __asm__("hlt");  // halt CPU until next interrupt
     }
     return input_buffer;

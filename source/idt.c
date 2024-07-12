@@ -4,6 +4,7 @@
 //
 
 #include "idt.h"
+#include "display.h"
 
 struct InterruptDescriptor32 IDT[256];
 
@@ -24,4 +25,6 @@ void init_idt(void) {
     idt_ptr[1] = idt_address >> 16;
 
     load_idt(idt_ptr);
+
+    println("[IDT] Initialized IDT");
 }
