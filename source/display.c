@@ -65,6 +65,17 @@ void print_char(unsigned char c) {
 }
 
 
+void del_last_char() {
+	if (current_col == 0) {
+		return;
+	}
+
+	current_col--;
+	print_char_xy('\0', current_col, current_row);
+	move_cursor(current_row, current_col);
+}
+
+
 void print(const char* str) {
     for(int i=0; str[i] != 0; i++) {
         print_char(str[i]);

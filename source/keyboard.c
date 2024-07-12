@@ -40,14 +40,14 @@ void keyboard_handler(void) {
 
         if (!(scancode & 0x80)) {
             if (scancode == ENTER_KEY) {
-                input_buffer[buffer_index] = '\n';
-                input_buffer[buffer_index + 1] = '\0';
+                input_buffer[buffer_index] = '\0';
                 println("");
                 line_ready = 1;  // set flag
                 return;
-            } else if (scancode == BACKSPACE_KEY && buffer_index > 0) {
+            } else if (scancode == BACKSPACE_KEY && buffer_index > 0) { // backspace
                 buffer_index--;
-                print("\b \b");
+                input_buffer[buffer_index] = 0;
+                del_last_char();
             } else if (buffer_index < MAX_INPUT_LENGTH - 1) {
                 ascii = scancode_to_ascii[scancode];
                 if (ascii != 0) {
@@ -88,6 +88,5 @@ char* read_line(void) {
         // wait for Enter key
         __asm__("hlt");  // halt CPU until next interrupt
     }
-    input_buffer[buffer_index - 1] = '\0';  // replace newline with null terminator
     return input_buffer;
 }
