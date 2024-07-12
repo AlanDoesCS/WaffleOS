@@ -17,6 +17,6 @@ typedef enum {
 } FATType;
 
 void init_fat(void);
-
+FATType get_fat_type(uint32_t total_clusters, uint16_t sectorsize);
 
 #endif //FAT_H

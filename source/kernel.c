@@ -2,6 +2,7 @@
 #include "keyboard.h"
 #include "str.h"
 #include "kernel.h"
+#include "disk.h"
 
 void kernel_main(void) __attribute__((section(".text.kernel_entry")));
 
@@ -9,6 +10,7 @@ void kernel_main(void) {
     clear();
     println("[KERNEL] Kernel loaded successfully");
 
+    init_disk();
 	init_keyboard();
 
 	print_splash();
