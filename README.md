@@ -13,6 +13,17 @@ An open source operating system written in NASM and C, with the goal of demystif
 
 ---
 ## Installation
+
+### (For users) Virtual Machine (QEMU)
+*This guide requires you to be on a Linux based system, if on Windows, then it is recommended to install the "Windows Subsystem for Linux" (WSL)*
+*To install the WSL, simply run the command:* `wsl --install` *and follow the on-screen prompts, before restarting your system.*
+
+1) `sudo apt update`
+2) `sudo apt install qemu-system-i386`
+   - Download the latest OS image from the releases page, or from builds/bin/...
+3) `qemu-system-i386 -drive format=raw,file=PATH/TO/os-image.bin`
+4) Enjoy your emulated WaffleOS experience! 🎉🎉
+
 ### (For developers) Virtual Machine (QEMU)
 *This guide requires you to be on a Linux based system, if on Windows, then it is recommended to install the "Windows Subsystem for Linux" (WSL)*
 *To install the WSL, simply run the command:* `wsl --install` *and follow the on-screen prompts, before restarting your system.*
@@ -37,12 +48,6 @@ An open source operating system written in NASM and C, with the goal of demystif
 5) Restart your system
 6) Locate `source/run.sh` and run `chmod +x run.sh` then `./run.sh`
 7) Enjoy your emulated WaffleOS experience! 🎉🎉
-
-### (For users) Virtual Machine (QEMU)
-*This guide requires you to be on a Linux based system, if on Windows, then it is recommended to install the "Windows Subsystem for Linux" (WSL)*
-*To install the WSL, simply run the command:* `wsl --install` *and follow the on-screen prompts, before restarting your system.*
-
-1) *Guide in progress*
 
 ### x86 based device
 
