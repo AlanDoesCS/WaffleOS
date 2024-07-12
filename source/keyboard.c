@@ -81,9 +81,15 @@ void init_keyboard(void) {
     outb(0x21, 0xFD);
 }
 
-char* read_line(void) {
+
+void reset_keyboard(void) {
     buffer_index = 0;
     line_ready = 0;
+}
+
+
+char* read_line(void) {
+    reset_keyboard();
     while (!line_ready) {
         // wait for Enter key
         __asm__("hlt");  // halt CPU until next interrupt
