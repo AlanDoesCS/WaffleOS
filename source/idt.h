@@ -6,12 +6,14 @@
 #ifndef IDT_H
 #define IDT_H
 
+#include "types.h"
+
 struct InterruptDescriptor32 {
-    unsigned short int offset_lowerbits;   // offset bits 0..15
-    unsigned short int selector;           // a code segment selector in GDT
-    unsigned char zero;                    // unused, set to 0
-    unsigned char type_attributes;         // gate type, dpl, and p fields
-    unsigned short int offset_higherbits;  // offset bits 16..31
+    uint16_t offset_lowerbits;   // offset bits 0..15
+    uint16_t selector;           // a code segment selector in GDT
+    uint8_t zero;                    // unused, set to 0
+    uint8_t type_attributes;         // gate type, dpl, and p fields
+    uint16_t offset_higherbits;  // offset bits 16..31
 };
 
 void init_idt(void);

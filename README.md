@@ -56,8 +56,12 @@ An open source operating system written in NASM and C, with the goal of demystif
   - Prints a list of available commands
 - `clear`
   - Clears the screen
+- `shutdown` (not yet implemented, but will use ACPI)
+  - Shuts down the system
 
 ### Fun
 - `hello`
   - Prints "Hello, World!" to the screen
+- `waffle`
+    - Prints "WaffleOS" to the screen, along with a waffle in ascii
 ---
