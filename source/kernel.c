@@ -39,7 +39,7 @@ void execute_command(char* command) {
     } else if (strcmp(command, "hello") == 0) {
         println("Hello, World!");
     } else if ((strcmp(command, "waffle") == 0) | (strcmp(command, "waffleos") == 0)) {
-        print_splash();
+        println();
         println(" _________________");
         println("/ ._____________. \\");
         println("| |_|_|_|_|_|_|_| |");
@@ -49,6 +49,7 @@ void execute_command(char* command) {
         println("| |_|_|_|_|_|_|_| |");
         println("| |_|_|_|_|_|_|_| |");
         println("\\_________________/");
+        println();
     } else {
         // Default case: Print the entered command
         print("Unrecognised command: ");
