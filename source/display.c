@@ -7,8 +7,22 @@
 #define SCREEN_WIDTH 80
 #define SCREEN_HEIGHT 25
 
+// Helper functions for reading/writing from I/O
+extern unsigned char inb(unsigned short port);
+extern void outb(unsigned short port, unsigned char val);
+
 int current_row = 0;
 int current_col = 0;
+
+void move_cursor(int row, int col) {
+    // Calculate the position in the VGA text mode buffer
+    int position = (row) * SCREEN_WIDTH + (col - 1);
+
+    outb(0x3D4, 0x0F);          // Low cursor control register index
+    outb(0x3D5, (unsigned char)(position & 0xFF)); // Low byte of position
+    outb(0x3D4, 0x0E);          // High cursor control register index
+    outb(0x3D5, (unsigned char)((position >> 8) & 0xFF)); // High byte of position
+}
 
 void clear() {
     volatile char* video_memory = (volatile char*)VIDEO_MEMORY;
@@ -47,6 +61,7 @@ void print_char(unsigned char c) {
             current_row = 0;
         }
     }
+    move_cursor(current_row, current_col);
 }
 
 

@@ -11,6 +11,8 @@ void kernel_main(void) {
     println("                \xBA WaffleOS \xBA");                                // ║ WaffleOS ║
     println("                \xC8\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xBC");  // ╚══════════╝
 
+    init_keyboard();
+
     while(1) {
         print("Enter a command: ");
         char* input = read_line();

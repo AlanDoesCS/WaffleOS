@@ -6,13 +6,19 @@
 #include "display.h"
 #include "idt.h"
 
+// Helper functions for reading/writing from I/O
+extern unsigned char inb(unsigned short port);
+extern void outb(unsigned short port, unsigned char val);
+
 #define KEYBOARD_DATA_PORT 0x60
+#define KEYBOARD_STATUS_PORT 0x64
 #define ENTER_KEY 0x1C
 #define BACKSPACE_KEY 0x0E
 #define MAX_INPUT_LENGTH 256
 
 char input_buffer[MAX_INPUT_LENGTH];
 int buffer_index = 0;
+volatile int line_ready = 0;  // line ready to return flag
 
 // US keyboard layout mapping
 const char scancode_to_ascii[] = {
@@ -24,43 +30,42 @@ const char scancode_to_ascii[] = {
 };
 
 void keyboard_handler(void) {
+    unsigned char status;
     unsigned char scancode;
     char ascii;
 
-    scancode = inb(KEYBOARD_DATA_PORT);
+    status = inb(KEYBOARD_STATUS_PORT);
+    if (status & 0x01) {
+        scancode = inb(KEYBOARD_DATA_PORT);
 
-    if (scancode & 0x80) { // ignore key release
-        return;
+        if (!(scancode & 0x80)) {
+            if (scancode == ENTER_KEY) {
+                input_buffer[buffer_index] = '\n';
+                input_buffer[buffer_index + 1] = '\0';
+                println("");
+                line_ready = 1;  // set flag
+                return;
+            } else if (scancode == BACKSPACE_KEY && buffer_index > 0) {
+                buffer_index--;
+                print("\b \b");
+            } else if (buffer_index < MAX_INPUT_LENGTH - 1) {
+                ascii = scancode_to_ascii[scancode];
+                if (ascii != 0) {
+                    input_buffer[buffer_index++] = ascii;
+                    print_char(ascii);
+                }
+            }
+        }
     }
 
-    if (scancode == ENTER_KEY) {
-        input_buffer[buffer_index] = '\0';
-        println("");
-        buffer_index = 0;
-        return;
-    }
-
-    if (scancode == BACKSPACE_KEY && buffer_index > 0) {
-        buffer_index--;
-        print("\b \b");
-        return;
-    }
-
-    if (buffer_index >= MAX_INPUT_LENGTH - 1) { //ignore input after limit is reached
-        return;
-    }
-
-    ascii = scancode_to_ascii[scancode];
-    if (ascii != 0) {
-        input_buffer[buffer_index++] = ascii;
-        print_char(ascii);  // Print the character
-    }
+    // send End-of-Interrupt signal
+    outb(0x20, 0x20);
 }
 
 void init_keyboard(void) {
     init_idt();  // Initialize the IDT
 
-    // Remap the PIC
+    // remap the PIC
     outb(0x20, 0x11);
     outb(0xA0, 0x11);
     outb(0x21, 0x20);
@@ -72,27 +77,17 @@ void init_keyboard(void) {
     outb(0x21, 0x0);
     outb(0xA1, 0x0);
 
-    // Enable keyboard IRQ
+    // enable keyboard IRQ
     outb(0x21, 0xFD);
 }
 
 char* read_line(void) {
     buffer_index = 0;
-    while (input_buffer[buffer_index - 1] != '\n') {
-        // Wait for Enter key
-        __asm__("hlt");  // Halt CPU until next interrupt
+    line_ready = 0;
+    while (!line_ready) {
+        // wait for Enter key
+        __asm__("hlt");  // halt CPU until next interrupt
     }
-    input_buffer[buffer_index - 1] = '\0';  // Replace newline with null terminator
+    input_buffer[buffer_index - 1] = '\0';  // replace newline with null terminator
     return input_buffer;
-}
-
-// Helper functions for reading/writing from I/O
-unsigned char inb(unsigned short port) {
-    unsigned char value;
-    __asm__ __volatile__("inb %1, %0" : "=a"(value) : "Nd"(port));
-    return value;
-}
-
-void outb(unsigned short port, unsigned char val) {
-    __asm__ __volatile__("outb %0, %1" : : "a"(val), "Nd"(port));
 }

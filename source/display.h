@@ -5,6 +5,7 @@
 #ifndef DISPLAY_H
 #define DISPLAY_H
 
+void move_cursor(int row, int col);
 void clear();
 void print_char_xy(unsigned char c, int col, int row);
 void print_char(unsigned char c);
