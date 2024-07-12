@@ -1,6 +1,7 @@
 #include "display.h"
 #include "keyboard.h"
 #include "str.h"
+#include "kernel.h"
 
 void kernel_main(void) __attribute__((section(".text.kernel_entry")));
 
@@ -22,13 +23,28 @@ void kernel_main(void) {
         print("root $ ");
         char* input = read_line();
 
-        if (strcmp(input, "clear") == 0) {
-            clear();
-        } else {
-            // Default case: Print the entered command
-            print("Unrecognised command: ");
-            println(input);
-            println("");
-        }
+        execute_command(input);
+    }
+}
+
+void execute_command(char* command) {
+    if (strcmp(command, "clear") == 0) {
+        clear();
+        return;
+    } else if (strcmp(command, "help") == 0) {
+        println("Available commands:");
+        println("  clear - Clear the screen");
+        println("  help - Display this help message");
+        println("");
+        return;
+    }
+
+    if (strcmp(command, "hello") == 0) {
+        println("Hello, World!");
+    } else {
+        // Default case: Print the entered command
+        print("Unrecognised command: ");
+        println(command);
+        println("");
     }
 }

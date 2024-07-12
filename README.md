@@ -5,6 +5,7 @@ An open source operating system written in NASM and C, with the goal of demystif
 # Table of contents
 1) [Current Features](#features)
 2) [Installation Guide](#installation)
+3) [Command List](#commands)
 
 ---
 ## Features
@@ -46,3 +47,17 @@ An open source operating system written in NASM and C, with the goal of demystif
 ### x86 based device
 
 1) *Guide in progress*
+
+---
+## Commands
+*This list is subject to change*
+
+- `help`
+  - Prints a list of available commands
+- `clear`
+  - Clears the screen
+
+### Fun
+- `hello`
+  - Prints "Hello, World!" to the screen
+---
