@@ -78,7 +78,7 @@ init_pm:
 
     call KERNEL_OFFSET
 
-    jmp $
+    jmp $                    ; hang (should be unreachable)
 
 gdt_start:
     dd 0x0
