@@ -47,12 +47,8 @@ uint8_t read_status(void) {
     return inb(ATA_PRIMARY_ALT_STATUS_PORT);
 }
 
-void wait_not_busy(void) {
-    while (read_status() & ATA_STATUS_BSY);
-}
-
 char* read_status_str() {
-	uint8_t status = read_status();
+    uint8_t status = read_status();
     if (status & ATA_STATUS_BSY) {
         return "BUSY";
     } else if (status & ATA_STATUS_DRDY) {
@@ -68,12 +64,47 @@ char* read_status_str() {
     }
 }
 
+void wait_not_busy(void) {
+    while (read_status() & ATA_STATUS_BSY);
+}
+
+int identify_device(void) {
+    select_device(ATA_MASTER_DRIVE);
+    wait_not_busy();
+
+    // Identify cmd params
+    outb(ATA_PRIMARY_SECTOR_COUNT_PORT, 0);
+    outb(ATA_PRIMARY_LBA_LOW_PORT, 0);
+    outb(ATA_PRIMARY_LBA_MID_PORT, 0);
+    outb(ATA_PRIMARY_LBA_HIGH_PORT, 0);
+
+    outb(ATA_PRIMARY_COMMAND_PORT, ATA_IDENTIFY_DRIVE_CMD);
+
+    // Read status until not busy and neither error or data request bits are set
+    uint8_t status;
+    do {
+        status = read_status();
+    } while ((status & ATA_STATUS_BSY) && !(status & (ATA_STATUS_ERR | ATA_STATUS_DRQ)));
+
+    if (status & ATA_STATUS_ERR) {
+        println("[DISK] Error during device identification");
+        return 0;
+    }
+
+    for (int i = 0; i < 256; i++) {
+        uint16_t data = inb(ATA_PRIMARY_DATA_PORT) | (inb(ATA_PRIMARY_DATA_PORT) << 8);
+        // TODO: Store the data in a struct
+    }
+
+    return 1;
+}
+
 void select_device(uint8_t device) {
     if (device != last_selected_device) {
         outb(ATA_PRIMARY_DRIVE_PORT, device);
         last_selected_device = device;
 
-        // Read the status register 15 times after device selection
+        // Read the status register 15 times after device selection (waits 400ns)
         for (int i = 0; i < 15; i++) {
             inb(ATA_PRIMARY_ALT_STATUS_PORT);
         }
@@ -99,4 +130,10 @@ void init_disk(void) {
 
 	print("[DISK] Disk status: ");
 	println(read_status_str());
+
+    if (identify_device()) {
+        println("[DISK] ATA disk initialized");
+    } else {
+        println("[DISK] Failed to initialize ATA disk");
+    }
 }
