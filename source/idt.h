@@ -14,7 +14,7 @@ struct InterruptDescriptor32 {
     uint8_t zero;                    // unused, set to 0
     uint8_t type_attributes;         // gate type, dpl, and p fields
     uint16_t offset_higherbits;  // offset bits 16..31
-};
+} __attribute__((packed));
 
 void init_idt(void);
 

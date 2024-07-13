@@ -35,6 +35,8 @@ void keyboard_handler(void) {
     unsigned char scancode;
     char ascii;
 
+    println("Keyboard interrupt!!!");
+
     status = inb(KEYBOARD_STATUS_PORT);
     if (status & 0x01) {
         scancode = inb(KEYBOARD_DATA_PORT);
@@ -66,7 +68,7 @@ void keyboard_handler(void) {
 }
 
 void init_keyboard(void) {
-    delay(10000);
+    println("[I/O] Initializing keyboard...");
 
     init_idt();  // Initialize the IDT
 

@@ -5,6 +5,10 @@
 
 #include "fat.h"
 
+void init_fat(void) {
+    return;
+}
+
 FATType get_fat_type(uint32_t total_clusters, uint16_t sectorsize) {
     if (sectorsize == 0) {
         return ExFAT;

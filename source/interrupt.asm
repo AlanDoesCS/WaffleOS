@@ -7,7 +7,6 @@ section .text
 load_idt:
     mov edx, [esp + 4]
     lidt [edx]
-    sti
     ret
 
 irq1:

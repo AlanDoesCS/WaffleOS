@@ -2,6 +2,9 @@
 // Created by Alan on 11/07/2024.
 //
 
+#include "types.h"
+#include "str.h"
+
 #define VIDEO_MEMORY 0xb8000
 #define WHITE_ON_BLACK 0x0f
 #define SCREEN_WIDTH 80
@@ -64,7 +67,6 @@ void print_char(unsigned char c) {
     move_cursor(current_row, current_col);
 }
 
-
 void del_last_char() {
 	if (current_col == 0) {
 		return;
@@ -82,6 +84,11 @@ void print(const char* str) {
     }
 }
 
+void print_uint32(uint32_t value) {
+    char buffer[9];
+    int_to_hex_str(value, buffer);
+    print(buffer);
+}
 
 void println(const char* str) {
     print(str);

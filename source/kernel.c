@@ -10,19 +10,8 @@ void kernel_main(void) {
     clear();
 	print_splash();
 
-	println("[KERNEL] Kernel loaded successfully");
-
-    println("[DISK] Initializing disk...");
-    delay(10000);
-
-    //init_disk();
-
-    println("[I/O] Initializing keyboard...");
-    delay(10000);
-
+    init_disk();
 	init_keyboard();
-
-    delay(10000);
 
 	println("[KERNEL] Kernel initialisation complete");
 	println("");
