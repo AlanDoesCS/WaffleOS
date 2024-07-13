@@ -5,6 +5,7 @@
 
 #include "idt.h"
 #include "display.h"
+#include "kernel.h"
 
 struct InterruptDescriptor32 IDT[256];
 
@@ -12,17 +13,26 @@ void init_idt(void) {
     extern int load_idt(unsigned long*);
     extern int irq1();
 
+    println("[IDT] Initializing IDT...");
+    delay(100000);
+
     unsigned long irq1_address = (unsigned long)irq1;
     IDT[33].offset_lowerbits = irq1_address & 0xffff;
     IDT[33].selector = 0x08;
     IDT[33].zero = 0;
     IDT[33].type_attributes = 0x8e;
-    IDT[33].offset_higherbits = (irq1_address & 0xffff0000) >> 16;
+    IDT[33].offset_higherbits = (irq1_address >> 16) & 0xffff;
+
+    println("[IDT] 1");
+    delay(100000);
 
     unsigned long idt_address = (unsigned long)IDT;
     unsigned long idt_ptr[2];
     idt_ptr[0] = (sizeof(struct InterruptDescriptor32) * 256) + ((idt_address & 0xffff) << 16);
     idt_ptr[1] = idt_address >> 16;
+
+    println("[IDT] 2");
+    delay(100000);
 
     load_idt(idt_ptr);
 

@@ -5,6 +5,7 @@
 #include "keyboard.h"
 #include "display.h"
 #include "idt.h"
+#include "kernel.h"
 
 // Helper functions for reading/writing from I/O
 extern unsigned char inb(unsigned short port);
@@ -65,6 +66,8 @@ void keyboard_handler(void) {
 }
 
 void init_keyboard(void) {
+    delay(10000);
+
     init_idt();  // Initialize the IDT
 
     // remap the PIC
@@ -83,7 +86,7 @@ void init_keyboard(void) {
     outb(0x21, 0xFD);
     outb(0xA1, 0xFF);
 
-    println("[KERNEL] Keyboard initialized");
+    println("[I/O] Keyboard initialized");
 }
 
 

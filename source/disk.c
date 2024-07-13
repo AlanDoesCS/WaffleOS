@@ -42,6 +42,8 @@ static uint8_t last_selected_device = ATA_FLOATING_BUS;  // initial value is inv
 // Helper functions for reading/writing from I/O
 extern uint8_t inb(uint16_t port);
 extern void outb(uint16_t port, uint8_t val);
+extern uint16_t inw(uint16_t port);
+extern void outw(uint16_t port, uint16_t val);
 
 uint8_t read_status(void) {
     return inb(ATA_PRIMARY_ALT_STATUS_PORT);
@@ -84,7 +86,7 @@ int identify_device(void) {
     uint8_t status;
     do {
         status = read_status();
-    } while ((status & ATA_STATUS_BSY) && !(status & (ATA_STATUS_ERR | ATA_STATUS_DRQ)));
+    } while (status & ATA_STATUS_BSY);
 
     if (status & ATA_STATUS_ERR) {
         println("[DISK] Error during device identification");
@@ -92,7 +94,7 @@ int identify_device(void) {
     }
 
     for (int i = 0; i < 256; i++) {
-        uint16_t data = inb(ATA_PRIMARY_DATA_PORT) | (inb(ATA_PRIMARY_DATA_PORT) << 8);
+        uint16_t data = inw(ATA_PRIMARY_DATA_PORT);
         // TODO: Store the data in a struct
     }
 
@@ -116,13 +118,18 @@ int detect_device(void) {
     wait_not_busy();
 
     uint8_t status = read_status();
-    if (status == ATA_FLOATING_BUS) {    // No drive
+    uint8_t lba_mid = inb(ATA_PRIMARY_LBA_MID_PORT);
+    uint8_t lba_high = inb(ATA_PRIMARY_LBA_HIGH_PORT);
+    if (status == ATA_FLOATING_BUS && lba_mid == ATA_FLOATING_BUS && lba_high == ATA_FLOATING_BUS) {    // No drive
         return 0;
     }
+
     return 1;    // Drive detected
 }
 
 void init_disk(void) {
+    println("[DISK] Initializing disk...");
+
     if (!detect_device()) {
         println("[DISK] No drive detected");
         return;

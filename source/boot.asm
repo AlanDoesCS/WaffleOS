@@ -20,7 +20,7 @@ start:
 
 load_kernel:
     mov bx, KERNEL_OFFSET
-    mov dh, 15                  ; load 15 sectors: 7.5KB
+    mov dh, 20                  ; load 20 sectors
     mov dl, [BOOT_DISK]         ; load from boot disk
     call disk_load
     ret
@@ -85,11 +85,11 @@ gdt_start:
     dd 0x0
 gdt_code:
     dw 0xffff
-    dw 0x0
-    db 0x0
+    dw 0x0000
+    db 0x00
     db 10011010b
     db 11001111b
-    db 0x0
+    db 0x00
 gdt_data:
     dw 0xffff
     dw 0x0

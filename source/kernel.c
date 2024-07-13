@@ -12,8 +12,17 @@ void kernel_main(void) {
 
 	println("[KERNEL] Kernel loaded successfully");
 
-    init_disk();
+    println("[DISK] Initializing disk...");
+    delay(10000);
+
+    //init_disk();
+
+    println("[I/O] Initializing keyboard...");
+    delay(10000);
+
 	init_keyboard();
+
+    delay(10000);
 
 	println("[KERNEL] Kernel initialisation complete");
 	println("");
@@ -66,4 +75,13 @@ void print_splash(void) {
     println("                                  \xBA WaffleOS \xBA");                                // ║ WaffleOS ║
     println("                                  \xC8\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xBC");  // ╚══════════╝
     println("");
+}
+
+void delay(int duration) {    // TODO: Implement a better delay function
+    volatile int i, j;
+    for (i = 0; i < duration; i++) {
+        for (j = 0; j < 10000; j++) {
+
+        }
+    }
 }
