@@ -7,6 +7,8 @@
 
 #include "types.h"
 
+uint8_t read_status(void);
+void select_device(uint8_t device);
 void init_disk(void);
 
 #endif //DISK_H
