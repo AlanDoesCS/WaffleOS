@@ -8,13 +8,15 @@ void kernel_main(void) __attribute__((section(".text.kernel_entry")));
 
 void kernel_main(void) {
     clear();
-    println("[KERNEL] Kernel loaded successfully");
+	print_splash();
+
+	println("[KERNEL] Kernel loaded successfully");
 
     init_disk();
 	init_keyboard();
 
-	print_splash();
-
+	println("[KERNEL] Kernel initialisation complete");
+	println("");
     while(1) {
         print("root $ ");
         char* input = read_line();

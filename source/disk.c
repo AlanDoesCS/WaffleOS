@@ -47,6 +47,27 @@ uint8_t read_status(void) {
     return inb(ATA_PRIMARY_ALT_STATUS_PORT);
 }
 
+void wait_not_busy(void) {
+    while (read_status() & ATA_STATUS_BSY);
+}
+
+char* read_status_str() {
+	uint8_t status = read_status();
+    if (status & ATA_STATUS_BSY) {
+        return "BUSY";
+    } else if (status & ATA_STATUS_DRDY) {
+        return "READY";
+    } else if (status & ATA_STATUS_DRQ) {
+        return "DATA REQUEST";
+    } else if (status & ATA_STATUS_ERR) {
+        return "ERROR";
+    } else if (status & ATA_STATUS_DF) {
+        return "DEVICE FAULT";
+    } else {
+        return "UNKNOWN";
+    }
+}
+
 void select_device(uint8_t device) {
     if (device != last_selected_device) {
         outb(ATA_PRIMARY_DRIVE_PORT, device);
@@ -59,15 +80,23 @@ void select_device(uint8_t device) {
     }
 }
 
-void init_disk(void) {
-    println("[DISK] Disk initialized");
+int detect_device(void) {
+    select_device(ATA_MASTER_DRIVE);
+    wait_not_busy();
+
+    uint8_t status = read_status();
+    if (status == ATA_FLOATING_BUS) {    // No drive
+        return 0;
+    }
+    return 1;    // Drive detected
 }
 
-/*
-void wait_400ns() {	// Less efficient: wastes clock cycles
-    inb(ATA_PRIMARY_DATA_PORT + 0x00);
-    inb(ATA_PRIMARY_DATA_PORT + 0x00);
-    inb(ATA_PRIMARY_DATA_PORT + 0x00);
-    inb(ATA_PRIMARY_DATA_PORT + 0x00);
+void init_disk(void) {
+    if (!detect_device()) {
+        println("[DISK] No drive detected");
+        return;
+    }
+
+	print("[DISK] Disk status: ");
+	println(read_status_str());
 }
-*/
