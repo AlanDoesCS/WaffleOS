@@ -41,7 +41,7 @@ void execute_command(char* command) {
     } else if (strcmp(command, "hello") == 0) {
         println("Hello, World!");
     } else if ((strcmp(command, "waffle") == 0) | (strcmp(command, "waffleos") == 0)) {
-        println("");
+        print_splash();
         println(" _________________");
         println("/ ._____________. \\");
         println("| |_|_|_|_|_|_|_| |");
@@ -52,6 +52,8 @@ void execute_command(char* command) {
         println("| |_|_|_|_|_|_|_| |");
         println("\\_________________/");
         println("");
+    } else if (strcmp(command, "cowsay") == 0) {
+        cowsay("WaffleOS!");
     } else {
         // Default case: Print the entered command
         print("Unrecognised command: ");
@@ -75,4 +77,18 @@ void delay(int duration) {    // TODO: Implement a better delay function
 
         }
     }
+}
+
+void cowsay(char* message) {    // TODO: change once string concatenation is improved (requires memory allocation)
+    println(" ___________");
+    print("< ");
+    print(message);
+    println(" >");
+    println(" -----------");
+    println("        \\   ^__^");
+    println("         \\  (oo)\\_______");
+    println("            (__)\\       )\\/\\");
+    println("                ||----w |");
+    println("                ||     ||");
+    println("");
 }

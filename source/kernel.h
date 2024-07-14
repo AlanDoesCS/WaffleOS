@@ -7,6 +7,7 @@
 
 void execute_command(char* command);
 void print_splash(void);
+void cowsay(char* message);
 void delay(int duration);
 
 #endif //KERNEL_H
