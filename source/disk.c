@@ -20,6 +20,9 @@
 #define ATA_PRIMARY_ALT_STATUS_PORT 0x3F6
 #define ATA_SECONDARY_ALT_STATUS_PORT 0x376
 
+#define ATA_READ_SECTORS_CMD 0x20
+#define ATA_WRITE_SECTORS_CMD 0x30
+
 #define ATA_IDENTIFY_DRIVE_CMD 0xEC
 
 #define ATA_SECONDARY_DATA_PORT 0x170
@@ -68,6 +71,10 @@ char* read_status_str() {
 
 void wait_not_busy(void) {
     while (read_status() & ATA_STATUS_BSY);
+}
+
+void wait_ready(void) {
+    while (!(read_status() & ATA_STATUS_DRDY));
 }
 
 int identify_device(void) {
@@ -125,6 +132,39 @@ int detect_device(void) {
     }
 
     return 1;    // Drive detected
+}
+
+void setup_drive_read_write(uint8_t device, uint32_t lba, uint8_t sector_count) {
+    select_device(ATA_MASTER_DRIVE);
+    wait_not_busy();
+    wait_ready();
+
+    // from "48 bit PIO" section of "https://wiki.osdev.org/ATA_PIO_Mode"
+    outb(ATA_PRIMARY_DRIVE_PORT, device);
+    outb(ATA_PRIMARY_SECTOR_COUNT_PORT, sector_count);
+    outb(ATA_PRIMARY_LBA_LOW_PORT, (uint8_t)lba);
+    outb(ATA_PRIMARY_LBA_MID_PORT, (uint8_t)(lba >> 8));
+    outb(ATA_PRIMARY_LBA_HIGH_PORT, (uint8_t)(lba >> 16));
+}
+
+int read_sectors(uint32_t lba, uint8_t sector_count, uint8_t* buffer) {
+    setup_drive_read_write(ATA_MASTER_DRIVE, lba, sector_count);
+
+    outb(ATA_PRIMARY_COMMAND_PORT, ATA_READ_SECTORS_CMD);
+
+    // read data
+
+    return 1;
+}
+
+int write_sectors(uint32_t lba, uint8_t sector_count, const uint8_t* buffer) {
+    setup_drive_read_write(ATA_MASTER_DRIVE, lba, sector_count);
+
+    outb(ATA_PRIMARY_COMMAND_PORT, ATA_WRITE_SECTORS_CMD);
+
+    // write data
+
+    return 1;
 }
 
 void init_disk(void) {
