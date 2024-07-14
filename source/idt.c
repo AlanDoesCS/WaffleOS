@@ -64,8 +64,10 @@ void init_pic(void) { // remap PIC
     outb(0xA1, 0x02);
     outb(0x21, 0x01);
     outb(0xA1, 0x01);
-    outb(0x21, 0x0);
-    outb(0xA1, 0x0);
+
+    // disable all IRQs
+    outb(0x21, 0xFF);
+    outb(0xA1, 0xFF);
 }
 
 void enable_irq(uint8_t irq) {
@@ -78,6 +80,7 @@ void enable_irq(uint8_t irq) {
         port = 0xA1;
         irq -= 8;
     }
+
     value = inb(port) & ~(1 << irq); // clear bit using bit mask(enable specific IRQ)
     outb(port, value);
 }

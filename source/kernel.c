@@ -11,15 +11,10 @@ void kernel_main(void) {
     clear();
 	print_splash();
 
-    delay(100000);
     init_idt();
-    delay(100000);
     init_disk();
-    delay(100000);
 	init_keyboard();
-    delay(100000);
     enable_interrupts();
-    delay(100000);
 	println("[KERNEL] Kernel initialisation complete");
 	println("");
     while(1) {
