@@ -12,15 +12,14 @@ void kernel_main(void) {
     clear();
 	print_splash();
 
-    init_pit();
     init_idt();
     init_disk();
 	init_keyboard();
+    init_pit();
 
     enable_interrupts();
 
     println("[KERNEL] Kernel initialisation complete");
-    sleep(5); // Sleep for 5 seconds
     println("[PIT] Programmable Interval Timer is functioning");
 	println("");
     while(1) {

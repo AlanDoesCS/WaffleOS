@@ -44,7 +44,7 @@ void timer_handler(void) {
         milliseconds_high++;
     }
 
-    if (milliseconds_low % FREQUENCY_MILLIS == 0) {
+    if (milliseconds_low % 1000 == 0) {
         println("[PIT] 1 second has passed");
     }
 
@@ -58,13 +58,10 @@ void sleep_millis(uint32_t duration) {
     uint32_t end_low = start_low + duration;
     uint32_t end_high = start_high + (end_low < start_low ? 1 : 0);
 
-    print("[SLEEP] Starting sleep for ");
-    print_uint32(duration);
-    println(" milliseconds");
-
     while (milliseconds_high < end_high || (milliseconds_high == end_high && milliseconds_low < end_low)) {
         __asm__ volatile("hlt");
     }
+    send_eoi(0);
 }
 
 void sleep(uint32_t duration) {
