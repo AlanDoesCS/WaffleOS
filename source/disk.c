@@ -24,6 +24,7 @@
 #define ATA_WRITE_SECTORS_CMD 0x30
 
 #define ATA_IDENTIFY_DRIVE_CMD 0xEC
+#define ATA_FLUSH_CACHE_CMD 0xE7
 
 #define ATA_SECONDARY_DATA_PORT 0x170
 #define ATA_SECONDARY_ERROR_PORT 0x171
@@ -163,6 +164,20 @@ int write_sectors(uint32_t lba, uint8_t sector_count, const uint8_t* buffer) {
     outb(ATA_PRIMARY_COMMAND_PORT, ATA_WRITE_SECTORS_CMD);
 
     // write data
+    const uint16_t* buf = (const uint16_t*)buffer;
+    for (int sector = 0; sector < sector_count; sector++) {
+        wait_not_busy();
+        wait_ready();
+
+        // Write 512 bytes for each sector
+        for (int i = 0; i < 256; i++) {
+            outw(ATA_PRIMARY_DATA_PORT, buf[i]);
+        }
+        buf += 256;
+
+        outb(ATA_PRIMARY_COMMAND_PORT, ATA_FLUSH_CACHE_CMD);
+        wait_not_busy();
+    }
 
     return 1;
 }
