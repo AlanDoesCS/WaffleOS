@@ -6,10 +6,13 @@
 #include "display.h"
 #include "idt.h"
 #include "kernel.h"
+#include "types.h"
 
 // Helper functions for reading/writing from I/O
 extern unsigned char inb(unsigned short port);
 extern void outb(unsigned short port, unsigned char val);
+
+extern void irq1(void);
 
 #define KEYBOARD_DATA_PORT 0x60
 #define KEYBOARD_STATUS_PORT 0x64
@@ -68,26 +71,11 @@ void keyboard_handler(void) {
 void init_keyboard(void) {
     println("[I/O] Initializing keyboard...");
 
-    init_idt();  // Initialize the IDT
-
-    // remap the PIC
-    outb(0x20, 0x11);
-    outb(0xA0, 0x11);
-    outb(0x21, 0x20);
-    outb(0xA1, 0x28);
-    outb(0x21, 0x04);
-    outb(0xA1, 0x02);
-    outb(0x21, 0x01);
-    outb(0xA1, 0x01);
-    outb(0x21, 0x0);
-    outb(0xA1, 0x0);
+    register_interrupt_handler(33, (uint32_t)irq1);
 
     // enable keyboard IRQ
     outb(0x21, 0xFD);
     outb(0xA1, 0xFF);
-
-	// enable interrupts
-	__asm__ volatile("sti");
 
     println("[I/O] Keyboard initialized");
 }

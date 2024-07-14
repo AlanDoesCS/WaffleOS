@@ -16,6 +16,11 @@ struct InterruptDescriptor32 {
     uint16_t offset_higherbits;  // offset bits 16..31
 } __attribute__((packed));
 
+void enable_interrupts(void);
+void disable_interrupts(void);
 void init_idt(void);
+void init_pic(void);
+void enable_irq(uint8_t irq);
+void register_interrupt_handler(uint8_t interrupt_number, uint32_t handler_address);
 
 #endif //IDT_H
