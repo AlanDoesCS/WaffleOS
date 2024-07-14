@@ -23,6 +23,10 @@ void disable_interrupts(void) {
     __asm__ __volatile__("cli");
 }
 
+void send_eoi(int irq) { // end of interrupt signal
+    outb(0x20, 0x20);
+}
+
 void init_idt(void) {
     extern int load_idt(uint32_t*);
     extern int irq1();

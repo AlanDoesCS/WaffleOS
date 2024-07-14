@@ -18,6 +18,7 @@ struct InterruptDescriptor32 {
 
 void enable_interrupts(void);
 void disable_interrupts(void);
+void send_eoi(int irq);
 void init_idt(void);
 void init_pic(void);
 void enable_irq(uint8_t irq);
