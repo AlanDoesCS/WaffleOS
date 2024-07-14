@@ -35,8 +35,6 @@ void keyboard_handler(void) {
     unsigned char scancode;
     char ascii;
 
-    println("Keyboard interrupt!!!");
-
     status = inb(KEYBOARD_STATUS_PORT);
     if (status & 0x01) {
         scancode = inb(KEYBOARD_DATA_PORT);
@@ -87,6 +85,9 @@ void init_keyboard(void) {
     // enable keyboard IRQ
     outb(0x21, 0xFD);
     outb(0xA1, 0xFF);
+
+	// enable interrupts
+	__asm__ volatile("sti");
 
     println("[I/O] Keyboard initialized");
 }
