@@ -85,6 +85,28 @@ void print(const char* str) {
 }
 
 void print_uint32(uint32_t value) {
+    char buffer[11];
+    int i = 10;
+
+    if (value == 0) {
+        print_char('0');
+        return;
+    }
+
+    while (value > 0) {
+        buffer[i] = (value % 10) + '0';  // Convert digit to ASCII
+        value /= 10;
+        i--;
+    }
+
+    i++;
+    while (i < 11) {
+        print_char(buffer[i]);
+        i++;
+    }
+}
+
+void print_uint32_hex(uint32_t value) {
     char buffer[9];
     int_to_hex_str(value, buffer);
     print(buffer);

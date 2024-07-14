@@ -64,8 +64,7 @@ void keyboard_handler(void) {
         }
     }
 
-    // send End-of-Interrupt signal
-    outb(0x20, 0x20);
+    send_eoi(1);  // send end of interrupt signal
 }
 
 void init_keyboard(void) {
@@ -91,6 +90,6 @@ char* read_line(void) {
     while (!line_ready) {
         __asm__("hlt");  // halt CPU until next interrupt
     }
-    outb(0x20, 0x20);
+    send_eoi(1);  // send EOI to keyboard IRQ
     return input_buffer;
 }

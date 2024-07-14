@@ -4,6 +4,7 @@
 #include "str.h"
 #include "kernel.h"
 #include "disk.h"
+#include "timer.h"
 
 void kernel_main(void) __attribute__((section(".text.kernel_entry")));
 
@@ -14,8 +15,12 @@ void kernel_main(void) {
     init_idt();
     init_disk();
 	init_keyboard();
+    init_pit();
+
     enable_interrupts();
-	println("[KERNEL] Kernel initialisation complete");
+
+    println("[KERNEL] Kernel initialisation complete");
+    println("[PIT] Programmable Interval Timer is functioning");
 	println("");
     while(1) {
         print("root $ ");
@@ -68,15 +73,6 @@ void print_splash(void) {
     println("                                  \xBA WaffleOS \xBA");                                // ║ WaffleOS ║
     println("                                  \xC8\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xBC");  // ╚══════════╝
     println("");
-}
-
-void delay(int duration) {    // TODO: Implement a better delay function
-    volatile int i, j;
-    for (i = 0; i < duration; i++) {
-        for (j = 0; j < 10000; j++) {
-
-        }
-    }
 }
 
 void cowsay(char* message) {    // TODO: change once string concatenation is improved (requires memory allocation)
