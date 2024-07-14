@@ -139,17 +139,18 @@ void setup_drive_read_write(uint8_t device, uint32_t lba, uint8_t sector_count) 
     wait_not_busy();
     wait_ready();
 
-    // from "48 bit PIO" section of "https://wiki.osdev.org/ATA_PIO_Mode"
-    outb(ATA_PRIMARY_DRIVE_PORT, device);
+    uint8_t drive_byte = (device == ATA_SLAVE_DRIVE) ? 0xF0 : 0xE0; // default to master drive (0xE0)
+
+    // from "28 bit PIO" section of "https://wiki.osdev.org/ATA_PIO_Mode"
+    outb(ATA_PRIMARY_DRIVE_PORT, drive_byte | ((lba >> 24) & 0x0F));
     outb(ATA_PRIMARY_SECTOR_COUNT_PORT, sector_count);
-    outb(ATA_PRIMARY_LBA_LOW_PORT, (uint8_t)lba);
+    outb(ATA_PRIMARY_LBA_LOW_PORT, (uint8_t)(lba));
     outb(ATA_PRIMARY_LBA_MID_PORT, (uint8_t)(lba >> 8));
     outb(ATA_PRIMARY_LBA_HIGH_PORT, (uint8_t)(lba >> 16));
 }
 
 int read_sectors(uint32_t lba, uint8_t sector_count, uint8_t* buffer) {
     setup_drive_read_write(ATA_MASTER_DRIVE, lba, sector_count);
-
     outb(ATA_PRIMARY_COMMAND_PORT, ATA_READ_SECTORS_CMD);
 
     // read data
@@ -159,7 +160,6 @@ int read_sectors(uint32_t lba, uint8_t sector_count, uint8_t* buffer) {
 
 int write_sectors(uint32_t lba, uint8_t sector_count, const uint8_t* buffer) {
     setup_drive_read_write(ATA_MASTER_DRIVE, lba, sector_count);
-
     outb(ATA_PRIMARY_COMMAND_PORT, ATA_WRITE_SECTORS_CMD);
 
     // write data
