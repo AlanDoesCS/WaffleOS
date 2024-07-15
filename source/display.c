@@ -173,10 +173,5 @@ void print_uint32_hex(uint32_t value) {
 
 void println(const char* str) {
     print(str);
-    current_row++;
-    current_col = 0;
-
-    if (current_row > SCREEN_HEIGHT) { // go back to start
-        clear();
-    }
+    print_char('\n');
 }
