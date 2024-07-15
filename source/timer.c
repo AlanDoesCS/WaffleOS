@@ -9,7 +9,7 @@
 #include "idt.h"
 
 #define PIT_FREQUENCY 1193182
-#define FREQUENCY_MILLIS 1000    // 1000Hz or 1ms interval
+#define TARGET_FREQUENCY 100     // Hz
 #define PIT_COMMAND 0x36
 #define PIT_CHANNEL_0 0x40
 #define PIT_COMMAND_PORT 0x43
@@ -25,7 +25,10 @@ static volatile uint32_t milliseconds_low = 0;
 static volatile uint32_t milliseconds_high = 0;
 
 void init_pit() {
-    uint32_t divisor = PIT_FREQUENCY / FREQUENCY_MILLIS;
+    uint32_t divisor = PIT_FREQUENCY / TARGET_FREQUENCY;
+    print("[PIT] Divisor: ");
+    print_uint32(divisor);
+    println("");
 
     outb(PIT_COMMAND_PORT, PIT_COMMAND);
     outb(PIT_CHANNEL_0, (uint8_t)(divisor & 0xFF));
@@ -44,8 +47,12 @@ void timer_handler(void) {
         milliseconds_high++;
     }
 
-    if (milliseconds_low % 1000 == 0) {
-        println("[PIT] 1 second has passed");
+    print_char('.');
+
+    if (milliseconds_low % TARGET_FREQUENCY == 0) {
+        print("[PIT] 1 second has passed, system millis: ");
+        print_uint32(milliseconds_low);
+        println("");
     }
 
     send_eoi(0);
@@ -58,7 +65,7 @@ void sleep_millis(uint32_t duration) {
     uint32_t end_low = start_low + duration;
     uint32_t end_high = start_high + (end_low < start_low ? 1 : 0);
 
-    while (milliseconds_high < end_high || (milliseconds_high == end_high && milliseconds_low < end_low)) {
+    while (milliseconds_high < end_high || ((milliseconds_high == end_high) && (milliseconds_low < end_low))) {
         __asm__ volatile("hlt");
     }
     send_eoi(0);

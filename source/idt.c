@@ -48,7 +48,7 @@ void init_idt(void) {
     idt_ptr[1] = idt_address >> 16;
 
     print("[IDT] IDT address: 0x");
-    print_uint32(idt_ptr[0]);
+    print_uint32_hex(idt_ptr[0]);
     println("");
 
     load_idt(idt_ptr);
@@ -96,7 +96,7 @@ void register_interrupt_handler(uint8_t interrupt_number, uint32_t handler_addre
     IDT[interrupt_number].type_attributes = 0x8e;
     IDT[interrupt_number].offset_higherbits = (handler_address >> 16) & 0xffff;
 
-    print("[IDT] Registered interrupt handler for interrupt ");
-    print_uint32(interrupt_number);
+    print("[IDT] Registered interrupt handler for IRQ");
+    print_uint32(interrupt_number-32);
     println("");
 }

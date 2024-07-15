@@ -15,13 +15,11 @@ void kernel_main(void) {
     init_idt();
     init_disk();
 	init_keyboard();
-    init_pit();
+    // init_pit();
 
     enable_interrupts();
 
-    println("[KERNEL] Kernel initialisation complete");
-    println("[PIT] Programmable Interval Timer is functioning");
-	println("");
+    println("[KERNEL] Kernel initialisation complete\n");
     while(1) {
         print("root $ ");
         char* input = read_line();
@@ -63,16 +61,13 @@ void execute_command(char* command) {
         // Default case: Print the entered command
         print("Unrecognised command: ");
         println(command);
-        println("");
     }
 }
 
 void print_splash(void) {
-    println("");
-    println("                                  \xC9\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xBB");  // ╔══════════╗
-    println("                                  \xBA WaffleOS \xBA");                                // ║ WaffleOS ║
-    println("                                  \xC8\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xBC");  // ╚══════════╝
-    println("");
+    println("\n\t\t\t\t\t\t\t\t  \xC9\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xBB");  // ╔══════════╗
+    println("\t\t\t\t\t\t\t\t  \xBA WaffleOS \xBA");                                  // ║ WaffleOS ║
+    println("\t\t\t\t\t\t\t\t  \xC8\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xBC\n");  // ╚══════════╝
 }
 
 void cowsay(char* message) {    // TODO: change once string concatenation is improved (requires memory allocation)

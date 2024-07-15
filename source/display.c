@@ -10,14 +10,27 @@
 #define SCREEN_WIDTH 80
 #define SCREEN_HEIGHT 25
 
+#define TAB_SIZE 4
+
 // Helper functions for reading/writing from I/O
 extern unsigned char inb(unsigned short port);
 extern void outb(unsigned short port, unsigned char val);
 
-int current_row = 0;
-int current_col = 0;
+uint16_t current_row = 0;
+uint16_t current_col = 0;
+
+uint16_t get_cursor_col() {
+    return current_col;
+}
+
+uint16_t get_cursor_row() {
+    return current_row;
+}
 
 void move_cursor(int row, int col) {
+    current_row = row;
+    current_col = col;
+
     // Calculate the position in the VGA text mode buffer
     int position = (row) * SCREEN_WIDTH + col;
 
@@ -35,11 +48,24 @@ void clear() {
     }
 
     // go back to start
-    current_row = 0;
-    current_col = 0;
-    move_cursor(current_row, current_col);
+    move_cursor(0, 0);
 }
 
+void scroll_screen() {
+    volatile char* video_memory = (volatile char*)VIDEO_MEMORY;
+
+    // Move each line up by one
+    for (int i = 0; i < (SCREEN_HEIGHT - 1) * SCREEN_WIDTH; i++) {
+        video_memory[i * 2] = video_memory[(i + SCREEN_WIDTH) * 2];
+        video_memory[i * 2 + 1] = video_memory[(i + SCREEN_WIDTH) * 2 + 1];
+    }
+
+    // Clear the last line
+    for (int i = (SCREEN_HEIGHT - 1) * SCREEN_WIDTH; i < SCREEN_HEIGHT * SCREEN_WIDTH; i++) {
+        video_memory[i * 2] = ' ';
+        video_memory[i * 2 + 1] = WHITE_ON_BLACK;
+    }
+}
 
 void print_char_xy(unsigned char c, int col, int row) {
     col = col % SCREEN_WIDTH;
@@ -51,36 +77,63 @@ void print_char_xy(unsigned char c, int col, int row) {
     video_memory[offset + 1] = WHITE_ON_BLACK;
 }
 
-
-void print_char(unsigned char c) {
-    print_char_xy(c, current_col, current_row);
-    current_col++;
-
-    if (current_col > SCREEN_WIDTH) {
-        current_col=0;
-        current_row++;
-
-        if (current_row > SCREEN_HEIGHT) {
-            clear();
-        }
+void del_last_char() {
+    if (current_col == 0) {
+        return;
     }
+
+    current_col--;
+    print_char_xy('\0', current_col, current_row);
     move_cursor(current_row, current_col);
 }
 
-void del_last_char() {
-	if (current_col == 0) {
-		return;
-	}
+void print_char(unsigned char c) {
+    if (c == '\n') {
+        current_col = 0;
+        current_row++;
+    } else if (c == '\t') {
+        current_col += TAB_SIZE-(current_col % TAB_SIZE);
+    } else if (c == '\b') {
+        del_last_char();
+        return;
+    } else {
 
-	current_col--;
-	print_char_xy('\0', current_col, current_row);
-	move_cursor(current_row, current_col);
+        if (current_col >= SCREEN_WIDTH) {
+            current_col=0;
+            current_row++;
+        }
+
+        if (current_row >= SCREEN_HEIGHT) {
+            scroll_screen();
+            current_row = SCREEN_HEIGHT - 1;
+        }
+
+        print_char_xy(c, current_col, current_row);
+        current_col++;
+    }
+
+    move_cursor(current_row, current_col);
 }
 
+void print_uint16(uint16_t value) {
+    char buffer[6];
+    int i = 4;
 
-void print(const char* str) {
-    for(int i=0; str[i] != 0; i++) {
-        print_char(str[i]);
+    if (value == 0) {
+        print_char('0');
+        return;
+    }
+
+    while (value > 0) {
+        buffer[i] = (value % 10) + '0';  // Convert digit to ASCII
+        value /= 10;
+        i--;
+    }
+
+    i++;
+    while (i < 5) {
+        print_char(buffer[i]);
+        i++;
     }
 }
 
@@ -106,6 +159,12 @@ void print_uint32(uint32_t value) {
     }
 }
 
+void print(const char* str) {
+    for(int i=0; str[i] != 0; i++) {
+        print_char(str[i]);
+    }
+}
+
 void print_uint32_hex(uint32_t value) {
     char buffer[9];
     int_to_hex_str(value, buffer);
@@ -116,7 +175,8 @@ void println(const char* str) {
     print(str);
     current_row++;
     current_col = 0;
-    if (current_row >= SCREEN_HEIGHT) { // go back to start
-        current_row = 0;
+
+    if (current_row > SCREEN_HEIGHT) { // go back to start
+        clear();
     }
 }
