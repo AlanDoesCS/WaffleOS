@@ -1,16 +1,40 @@
 //
 // Created by Alan on 11/07/2024.
+// Based on: https://wiki.osdev.org/Printing_To_Screen
 //
 
 #include "types.h"
 #include "str.h"
 
 #define VIDEO_MEMORY 0xb8000
+
+// Color Table
+#define BLACK 0x0
+#define BLUE 0x1
+#define GREEN 0x2
+#define CYAN 0x3
+#define RED 0x4
+#define MAGENTA 0x5
+#define BROWN 0x6
+#define LIGHT_GRAY 0x7
+#define DARK_GRAY 0x8
+#define LIGHT_BLUE 0x9
+#define LIGHT_GREEN 0xa
+#define LIGHT_CYAN 0xb
+#define LIGHT_RED 0xc
+#define LIGHT_MAGENTA 0xd
+#define YELLOW 0xe
+#define WHITE 0xf
+
 #define WHITE_ON_BLACK 0x0f
+
 #define SCREEN_WIDTH 80
 #define SCREEN_HEIGHT 25
 
 #define TAB_SIZE 4
+
+// current color combination being used
+uint8_t COLOR = WHITE_ON_BLACK;
 
 // Helper functions for reading/writing from I/O
 extern unsigned char inb(unsigned short port);
@@ -44,7 +68,7 @@ void clear() {
     volatile char* video_memory = (volatile char*)VIDEO_MEMORY;
     for (int i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT; i++) {
         *video_memory++ = ' ';
-        *video_memory++ = WHITE_ON_BLACK;
+        *video_memory++ = COLOR;
     }
 
     // go back to start
@@ -63,7 +87,7 @@ void scroll_screen() {
     // Clear the last line
     for (int i = (SCREEN_HEIGHT - 1) * SCREEN_WIDTH; i < SCREEN_HEIGHT * SCREEN_WIDTH; i++) {
         video_memory[i * 2] = ' ';
-        video_memory[i * 2 + 1] = WHITE_ON_BLACK;
+        video_memory[i * 2 + 1] = COLOR;
     }
 }
 
@@ -74,7 +98,7 @@ void print_char_xy(unsigned char c, int col, int row) {
     volatile unsigned char* video_memory = (volatile unsigned char*)VIDEO_MEMORY;
     int offset = 2 * (row * SCREEN_WIDTH + col);
     video_memory[offset] = c;
-    video_memory[offset + 1] = WHITE_ON_BLACK;
+    video_memory[offset + 1] = COLOR;
 }
 
 void del_last_char() {
