@@ -42,17 +42,9 @@ void init_pit() {
 }
 
 void timer_handler(void) {
-    milliseconds_low++;
+    milliseconds_low+=10;
     if (milliseconds_low == 0) {  // Overflow occurred
         milliseconds_high++;
-    }
-
-    print_char('.');
-
-    if (milliseconds_low % TARGET_FREQUENCY == 0) {
-        print("[PIT] 1 second has passed, system millis: ");
-        print_uint32(milliseconds_low);
-        println("");
     }
 
     send_eoi(0);
@@ -68,7 +60,6 @@ void sleep_millis(uint32_t duration) {
     while (milliseconds_high < end_high || ((milliseconds_high == end_high) && (milliseconds_low < end_low))) {
         __asm__ volatile("hlt");
     }
-    send_eoi(0);
 }
 
 void sleep(uint32_t duration) {
@@ -87,5 +78,34 @@ void get_milliseconds(uint32_t* low, uint32_t* high) {
 uint32_t get_seconds(void) {
     uint32_t low, high;
     get_milliseconds(&low, &high);
-    return low / 1000 + high * 4294967; // 4294967 = (2^32 / 1000)
+
+    uint32_t seconds = high * 4294967 + low / 1000;
+
+    // 37/125 is 0.296 : used for added precision
+    seconds += (high * 37) / 125;
+    return seconds;
+}
+
+void get_systime_string(char* buffer) {
+    uint32_t seconds = get_seconds();
+    uint32_t minutes = (seconds % 3600) / 60;;
+    uint32_t hours = seconds / 3600;
+    seconds %= 60;
+
+    // ascii manipulation
+    buffer[0] = '0' + hours / 10;
+    buffer[1] = '0' + hours % 10;
+    buffer[2] = ':';
+    buffer[3] = '0' + minutes / 10;
+    buffer[4] = '0' + minutes % 10;
+    buffer[5] = ':';
+    buffer[6] = '0' + seconds / 10;
+    buffer[7] = '0' + seconds % 10;
+    buffer[8] = '\0';
+}
+
+void print_systime(void) {    // print time since system start
+    char buffer[9];
+    get_systime_string(buffer);
+    print(buffer);
 }

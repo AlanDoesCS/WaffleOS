@@ -15,7 +15,7 @@ void kernel_main(void) {
     init_idt();
     init_disk();
 	init_keyboard();
-    // init_pit();
+    init_pit();
 
     enable_interrupts();
 
@@ -37,10 +37,15 @@ void execute_command(char* command) {
         println("Available commands:");
         println("  clear - Clear the screen");
         println("  help - Display this help message");
+        println("  systime - Prints the time since startup");
         println("");
         return;
     } else if (strcmp(command, "shutdown") == 0) { // TODO: Implement shutdown
         println("Shutting down...");
+    } else if (strcmp(command, "systime") == 0) { // TODO: Implement shutdown
+        print("Time since startup: ");
+        print_systime();
+        print_char('\n');
     } else if (strcmp(command, "hello") == 0) {
         println("Hello, World!");
     } else if ((strcmp(command, "waffle") == 0) | (strcmp(command, "waffleos") == 0)) {
