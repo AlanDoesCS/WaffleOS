@@ -231,12 +231,24 @@ char* get_device_model_number(ATA_IDENTIFY_DEVICE_DATA* device_info) {
     return (char*)device_info->ModelNumber;
 }
 
+void print_device_model_number(ATA_IDENTIFY_DEVICE_DATA* device_info) {
+    print(get_device_model_number(device_info));
+}
+
 char* get_device_serial_number(ATA_IDENTIFY_DEVICE_DATA* device_info) {
     return (char*)device_info->SerialNumber;
 }
 
+void print_device_serial_number(ATA_IDENTIFY_DEVICE_DATA* device_info) {
+    print(get_device_serial_number(device_info));
+}
+
 char* get_device_firmware_revision(ATA_IDENTIFY_DEVICE_DATA* device_info) {
     return (char*)device_info->FirmwareRevision;
+}
+
+void print_device_firmware_revision(ATA_IDENTIFY_DEVICE_DATA* device_info) {
+    print(get_device_serial_number(device_info));
 }
 
 void init_disk(void) {
@@ -253,13 +265,13 @@ void init_disk(void) {
     ATA_IDENTIFY_DEVICE_DATA device_info;
     if (identify_device(&device_info)) {
         print("[DISK] Device model: \"");
-        print(get_device_model_number(&device_info));
+        print_device_model_number(&device_info);
         print("\"\n");
         print("[DISK] Serial number: \"");
-        print(get_device_serial_number(&device_info));
+        print_device_serial_number(&device_info);
         print("\"\n");
         print("[DISK] Firmware revision: \"");
-        print(get_device_firmware_revision(&device_info));
+        print_device_firmware_revision(&device_info);
         print("\"\n");
         println("[DISK] ATA disk initialized");
     } else {
