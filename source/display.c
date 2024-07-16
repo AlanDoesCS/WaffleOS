@@ -27,6 +27,7 @@
 #define WHITE 0xf
 
 #define WHITE_ON_BLACK 0x0f
+#define WHITE_ON_BLUE 0x1f
 
 #define SCREEN_WIDTH 80
 #define SCREEN_HEIGHT 25
@@ -34,7 +35,7 @@
 #define TAB_SIZE 4
 
 // current color combination being used
-uint8_t COLOR = WHITE_ON_BLACK;
+uint8_t COLOR = WHITE_ON_BLUE;
 
 // Helper functions for reading/writing from I/O
 extern unsigned char inb(unsigned short port);

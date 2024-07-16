@@ -25,10 +25,9 @@ static volatile uint32_t milliseconds_low = 0;
 static volatile uint32_t milliseconds_high = 0;
 
 void init_pit() {
+    println("[PIT] Initializing Programmable Interval Timer...");
+
     uint32_t divisor = PIT_FREQUENCY / TARGET_FREQUENCY;
-    print("[PIT] Divisor: ");
-    print_uint32(divisor);
-    println("");
 
     outb(PIT_COMMAND_PORT, PIT_COMMAND);
     outb(PIT_CHANNEL_0, (uint8_t)(divisor & 0xFF));
@@ -38,7 +37,9 @@ void init_pit() {
 
     enable_irq(0); // Enable IRQ0
 
-    println("[PIT] Programmable Interval Timer initialized");
+    print("[PIT] Programmable Interval Timer initialized and running at ");
+    print_uint32(TARGET_FREQUENCY);
+    println("Hz");
 }
 
 void timer_handler(void) {

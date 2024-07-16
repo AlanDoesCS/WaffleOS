@@ -26,7 +26,7 @@
 #define ATA_READ_MULTIPLE_CMD 0xC4
 #define ATA_WRITE_MULTIPLE_CMD 0xC5
 
-#define ATA_IDENTIFY_DRIVE_CMD 0xEC
+#define ATA_IDENTIFY_DEVICE_CMD 0xEC
 #define ATA_FLUSH_CACHE_CMD 0xE7
 
 #define ATA_SECONDARY_DATA_PORT 0x170
@@ -81,7 +81,7 @@ void wait_ready(void) {
     while (!(read_status() & ATA_STATUS_DRDY));
 }
 
-int identify_device(void) {
+int identify_device(ATA_IDENTIFY_DEVICE_DATA* device_info) {
     select_device(ATA_MASTER_DRIVE);
     wait_not_busy();
 
@@ -91,22 +91,52 @@ int identify_device(void) {
     outb(ATA_PRIMARY_LBA_MID_PORT, 0);
     outb(ATA_PRIMARY_LBA_HIGH_PORT, 0);
 
-    outb(ATA_PRIMARY_COMMAND_PORT, ATA_IDENTIFY_DRIVE_CMD);
+    outb(ATA_PRIMARY_COMMAND_PORT, ATA_IDENTIFY_DEVICE_CMD);
 
-    // Read status until not busy and neither error or data request bits are set
-    uint8_t status;
-    do {
-        status = read_status();
-    } while (status & ATA_STATUS_BSY);
-
-    if (status & ATA_STATUS_ERR) {
-        println("[DISK] Error during device identification");
+    uint8_t status = read_status();
+    if (status == ATA_FLOATING_BUS) {
+        println("[DISK] No device detected");
         return 0;
     }
 
-    for (int i = 0; i < 256; i++) {
-        uint16_t data = inw(ATA_PRIMARY_DATA_PORT);
-        // TODO: Store the data in a struct
+    wait_not_busy();
+
+    if (inb(ATA_PRIMARY_LBA_MID_PORT) != 0 || inb(ATA_PRIMARY_LBA_HIGH_PORT) != 0) {
+        println("[DISK] Not an ATA device");
+        return 0;
+    }
+
+    // Wait until the device is ready
+    do {
+        status = read_status();
+
+        if (status & ATA_STATUS_ERR) {
+            println("[DISK] Error during device identification");
+            return 0;
+        }
+    } while (status & ATA_STATUS_BSY);
+
+    // Read data from IDENTIFY (data from IDENTIFY is in the form of 512 bytes - 256 words)
+    uint16_t* data = (uint16_t*)device_info;
+    for (int i = 0; i < sizeof(ATA_IDENTIFY_DEVICE_DATA) / 2; i++) {
+        data[i] = inw(ATA_PRIMARY_DATA_PORT);
+    }
+
+    // Convert to strings
+    for (int i = 0; i < 20; i+=2) {
+        uint8_t tmp = device_info->SerialNumber[i];
+        device_info->SerialNumber[i] = device_info->SerialNumber[i+1];
+        device_info->SerialNumber[i+1] = tmp;
+    }
+    for (int i = 0; i < 8; i+=2) {
+        uint8_t tmp = device_info->FirmwareRevision[i];
+        device_info->FirmwareRevision[i] = device_info->FirmwareRevision[i+1];
+        device_info->FirmwareRevision[i+1] = tmp;
+    }
+    for (int i = 0; i < 40; i+=2) {
+        uint8_t tmp = device_info->ModelNumber[i];
+        device_info->ModelNumber[i] = device_info->ModelNumber[i+1];
+        device_info->ModelNumber[i+1] = tmp;
     }
 
     return 1;
@@ -185,6 +215,14 @@ int write_sectors(uint32_t lba, uint8_t sector_count, const uint8_t* buffer) {
     return 1;
 }
 
+char* get_device_model_number(ATA_IDENTIFY_DEVICE_DATA* device_info) {
+    return (char*)device_info->ModelNumber;
+}
+
+char* get_device_serial_number(ATA_IDENTIFY_DEVICE_DATA* device_info) {
+    return (char*)device_info->SerialNumber;
+}
+
 void init_disk(void) {
     println("[DISK] Initializing disk...");
 
@@ -196,7 +234,14 @@ void init_disk(void) {
 	print("[DISK] Disk status: ");
 	println(read_status_str());
 
-    if (identify_device()) {
+    ATA_IDENTIFY_DEVICE_DATA device_info;
+    if (identify_device(&device_info)) {
+        print("[DISK] Device model: \"");
+        print(get_device_model_number(&device_info));
+        print("\"\n");
+        print("[DISK] Serial number: \"");
+        print(get_device_serial_number(&device_info));
+        print("\"\n");
         println("[DISK] ATA disk initialized");
     } else {
         println("[DISK] Failed to initialize ATA disk");
