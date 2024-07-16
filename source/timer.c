@@ -105,6 +105,15 @@ void get_systime_string(char* buffer) {
     buffer[8] = '\0';
 }
 
+void get_systime_millis(uint32_t* high, uint32_t* low) {
+    disable_interrupts();
+
+    if (low) *low = milliseconds_low;
+    if (high) *high = milliseconds_high;
+
+    enable_interrupts();
+}
+
 void print_systime(void) {    // print time since system start
     char buffer[9];
     get_systime_string(buffer);

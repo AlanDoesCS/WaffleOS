@@ -6,6 +6,7 @@
 #include "disk.h"
 #include "display.h"
 #include "types.h"
+#include "timer.h"
 
 #define ATA_PRIMARY_DATA_PORT 0x1F0
 #define ATA_PRIMARY_ERROR_PORT 0x1F1
@@ -94,7 +95,7 @@ int identify_device(ATA_IDENTIFY_DEVICE_DATA* device_info) {
     outb(ATA_PRIMARY_COMMAND_PORT, ATA_IDENTIFY_DEVICE_CMD);
 
     uint8_t status = read_status();
-    if (status == ATA_FLOATING_BUS) {
+    if (status == 0) {
         println("[DISK] No device detected");
         return 0;
     }
@@ -106,15 +107,26 @@ int identify_device(ATA_IDENTIFY_DEVICE_DATA* device_info) {
         return 0;
     }
 
-    // Wait until the device is ready
-    do {
+    // Wait until data is ready
+    uint32_t start_time_low, current_time_low;
+    get_systime_millis(&start_time_low, NULL);
+    uint32_t timeout_duration = 5000; // 5s timeout
+    while(1) {
+        get_systime_millis(&current_time_low, NULL);
         status = read_status();
 
         if (status & ATA_STATUS_ERR) {
             println("[DISK] Error during device identification");
             return 0;
         }
-    } while (status & ATA_STATUS_BSY);
+        if (status & ATA_STATUS_DRQ) break;
+
+        // Timeout
+        if (current_time_low - start_time_low > timeout_duration) {
+            println("[DISK] Timeout during device identification");
+            return 0;
+        }
+    }
 
     // Read data from IDENTIFY (data from IDENTIFY is in the form of 512 bytes - 256 words)
     uint16_t* data = (uint16_t*)device_info;
@@ -223,6 +235,10 @@ char* get_device_serial_number(ATA_IDENTIFY_DEVICE_DATA* device_info) {
     return (char*)device_info->SerialNumber;
 }
 
+char* get_device_firmware_revision(ATA_IDENTIFY_DEVICE_DATA* device_info) {
+    return (char*)device_info->FirmwareRevision;
+}
+
 void init_disk(void) {
     println("[DISK] Initializing disk...");
 
@@ -241,6 +257,9 @@ void init_disk(void) {
         print("\"\n");
         print("[DISK] Serial number: \"");
         print(get_device_serial_number(&device_info));
+        print("\"\n");
+        print("[DISK] Firmware revision: \"");
+        print(get_device_firmware_revision(&device_info));
         print("\"\n");
         println("[DISK] ATA disk initialized");
     } else {

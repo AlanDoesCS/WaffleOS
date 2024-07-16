@@ -13,9 +13,9 @@ void kernel_main(void) {
 	print_splash();
 
     init_idt();
+    init_pit();
     init_disk();
 	init_keyboard();
-    init_pit();
 
     enable_interrupts();
 
