@@ -7,6 +7,7 @@
 #include "display.h"
 #include "types.h"
 #include "timer.h"
+#include "str.h"
 
 #define ATA_PRIMARY_DATA_PORT 0x1F0
 #define ATA_PRIMARY_ERROR_PORT 0x1F1
@@ -227,28 +228,33 @@ int write_sectors(uint32_t lba, uint8_t sector_count, const uint8_t* buffer) {
     return 1;
 }
 
+// TODO: Correct the following functions to not overwrite last char, and instead use malloc when implemented
 char* get_device_model_number(ATA_IDENTIFY_DEVICE_DATA* device_info) {
-    return (char*)device_info->ModelNumber;
-}
-
-void print_device_model_number(ATA_IDENTIFY_DEVICE_DATA* device_info) {
-    print(get_device_model_number(device_info));
+    char* model = device_info->ModelNumber;
+	model[39] = '\0';
+    return model;
 }
 
 char* get_device_serial_number(ATA_IDENTIFY_DEVICE_DATA* device_info) {
-    return (char*)device_info->SerialNumber;
-}
-
-void print_device_serial_number(ATA_IDENTIFY_DEVICE_DATA* device_info) {
-    print(get_device_serial_number(device_info));
+	char* serial = device_info->SerialNumber;
+	serial[19] = '\0';
+    return serial;
 }
 
 char* get_device_firmware_revision(ATA_IDENTIFY_DEVICE_DATA* device_info) {
-    return (char*)device_info->FirmwareRevision;
+    char* firmware = device_info->FirmwareRevision;
+	firmware[7] = '\0';
+	return firmware;
 }
 
-void print_device_firmware_revision(ATA_IDENTIFY_DEVICE_DATA* device_info) {
-    print(get_device_serial_number(device_info));
+void print_ata_device_info(ATA_IDENTIFY_DEVICE_DATA* device_info_ptr) {
+    print("Model:\t");
+    print(get_device_model_number(device_info_ptr));
+    print("\nSerial:\t");
+    print(get_device_serial_number(device_info_ptr));
+    print("\nFirmware:\t");
+    print(get_device_firmware_revision(device_info_ptr));
+    print_char('\n');
 }
 
 void init_disk(void) {
@@ -264,15 +270,8 @@ void init_disk(void) {
 
     ATA_IDENTIFY_DEVICE_DATA device_info;
     if (identify_device(&device_info)) {
-        print("[DISK] Device model: \"");
-        print_device_model_number(&device_info);
-        print("\"\n");
-        print("[DISK] Serial number: \"");
-        print_device_serial_number(&device_info);
-        print("\"\n");
-        print("[DISK] Firmware revision: \"");
-        print_device_firmware_revision(&device_info);
-        print("\"\n");
+        println("[DISK] Device Information:");
+        print_ata_device_info(&device_info);
         println("[DISK] ATA disk initialized");
     } else {
         println("[DISK] Failed to initialize ATA disk");
