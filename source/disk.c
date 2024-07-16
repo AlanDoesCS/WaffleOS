@@ -201,6 +201,24 @@ int read_sectors(uint32_t lba, uint8_t sector_count, uint8_t* buffer) {
     outb(ATA_PRIMARY_COMMAND_PORT, ATA_READ_SECTORS_CMD);
 
     // read data
+	for (int sector = 0; sector < sector_count; sector++) {
+        wait_not_busy();
+        wait_ready();
+
+        uint8_t status = read_status();
+        if (status & ATA_STATUS_ERR) {
+            println("[DISK] Error reading sector");
+            return 0;
+        }
+
+        for (int i = 0; i < 256; i++) {	// 256 words (512 bytes) per sector
+            uint16_t data = inw(ATA_PRIMARY_DATA_PORT);
+            buffer[i * 2] = (uint8_t)data;
+            buffer[i * 2 + 1] = (uint8_t)(data >> 8);
+        }
+
+        buffer += 512;	// goto next sector (512 byte offset)
+    }
 
     return 1;
 }
@@ -228,7 +246,7 @@ int write_sectors(uint32_t lba, uint8_t sector_count, const uint8_t* buffer) {
     return 1;
 }
 
-// TODO: Correct the following functions to not overwrite last char, and instead use malloc when implemented
+// TODO: Correct the following functions to not overwrite last char, and instead use malloc when implemented or a buffer
 char* get_device_model_number(ATA_IDENTIFY_DEVICE_DATA* device_info) {
     char* model = device_info->ModelNumber;
 	model[39] = '\0';

@@ -2,6 +2,7 @@
 #include "idt.h"
 #include "keyboard.h"
 #include "str.h"
+#include "fat.h"
 #include "kernel.h"
 #include "disk.h"
 #include "timer.h"
@@ -15,6 +16,7 @@ void kernel_main(void) {
     init_idt();
     init_pit();
     init_disk();
+    init_fat();
 	init_keyboard();
 
     enable_interrupts();
