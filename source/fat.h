@@ -149,7 +149,7 @@ typedef struct {
     0xEE (i.e., GPT Protective) is used by a protective MBR (see 5.2.2) to define a fake partition covering the entire disk.
 	*/
     uint8_t OSType;
-	EndingCHS[3];
+    uint8_t EndingCHS[3];
     uint32_t StartingLBA;
     uint32_t SizeInLBA;
 } __attribute__((packed)) LegacyMBRPartitionRecord;
@@ -164,11 +164,11 @@ typedef struct {
 } __attribute__((packed)) LegacyMBR;
 
 typedef struct {
-	uint8_t RequiredPartition : 1;
-	uint8_t NoBlockIOProtocol : 1;
-	uint8_t LegacyBIOSBootable : 1;
-	uint8_t Reserved : 45;
-	uint16_t Reserved2;
+    uint8_t RequiredPartition : 1;
+    uint8_t NoBlockIOProtocol : 1;
+    uint8_t LegacyBIOSBootable : 1;
+    uint64_t Reserved : 45;
+    uint16_t Reserved2;
 } __attribute__((packed)) GPTPartitionEntryAttributes;
 
 typedef struct {
@@ -181,7 +181,7 @@ typedef struct {
 } __attribute__((packed)) GPTPartitionEntry;
 
 typedef struct {
-	uint8_t  Signature[8];
+    uint8_t  Signature[8];
     uint32_t Revision;
     uint32_t HeaderSize;
     uint32_t HeaderCRC32;
