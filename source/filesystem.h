@@ -3,8 +3,8 @@
 // Based on: https://wiki.osdev.org/FAT
 //
 
-#ifndef FAT_H
-#define FAT_H
+#ifndef FILESYSTEM_H
+#define FILESYSTEM_H
 
 #include "types.h"
 #include "disk.h"
@@ -197,7 +197,9 @@ typedef struct {
     uint32_t PartitionEntryArrayCRC32;
 } __attribute__((packed)) GPTHeader;
 
-void init_fat(void);
+void init_filesystem(void);
+void parse_gpt();
+void parse_mbr(LegacyMBR* mbr);
 FATType get_fat_type(uint32_t total_clusters, uint16_t bytes_per_sector);
 
-#endif //FAT_H
+#endif // FILESYSTEM_H

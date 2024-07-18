@@ -4,7 +4,7 @@
 // and: https://wiki.osdev.org/GPT
 // and: https://uefi.org/specs/UEFI/2.10/05_GUID_Partition_Table_Format.html
 
-#include "fat.h"
+#include "filesystem.h"
 #include "disk.h"
 #include "display.h"
 #include "str.h"
@@ -13,17 +13,57 @@
 
 #include "timer.h"
 
+#define GPT_PROTECTIVE_MBR 0xEE
+#define UEFI_SYSTEM_PARTITION 0xEF
+
 static FAT_Filesystem current_filesystem;
+
+void print_guid(uint8_t* guid) {
+    for (int i = 0; i < 16; i++) {
+        print_uint8(guid[i]);
+    }
+}
 
 void parse_guid_partition_table(uint8_t* gpt_sector) {
 }
 
-void print_guid(uint8_t* guid) {
-}
-
-void init_fat(void) {
+void init_filesystem(void) {
     uint8_t boot_sector[SECTOR_SIZE];
     if (!read_sectors(0, 1, boot_sector)) {    // read boot sector into buffer
+        println("[FS] Unable to read boot sector");
+        return;
+    }
+
+    if (boot_sector[510] != 0x55 || boot_sector[511] != 0xAA) {
+        println("[FS] Invalid boot sector signature");
+        return;
+    }
+
+    // check for GPT or MBR
+    LegacyMBR* mbr = (LegacyMBR*)boot_sector;
+    if (mbr->PartitionRecord[0].OSType == GPT_PROTECTIVE_MBR) {
+        println("[FS] GPT Protective MBR detected");
+        parse_gpt();
+        return;
+    } else {
+        println("[FS] MBR detected");
+        parse_mbr(mbr);
+    }
+
+    // TODO: FAT
+}
+
+void parse_gpt(void) {
+    return;
+}
+
+void parse_mbr(LegacyMBR* mbr) {
+    return;
+}
+
+void init_fat_partition(uint32_t partition_start_lba) {
+    uint8_t boot_sector[SECTOR_SIZE];
+    if (!read_sectors(partition_start_lba, 1, boot_sector)) {    // read boot sector into buffer
         println("[FAT] Unable to read boot sector");
         return;
     }
@@ -89,8 +129,6 @@ void init_fat(void) {
 
     current_filesystem.type = get_fat_type(total_clusters, BPB->BytesPerSector);
 
-
-
     // store filesystem information depending on type
     switch (current_filesystem.type) {
         case FAT12:
@@ -114,8 +152,6 @@ void init_fat(void) {
 
     println("[FAT] FAT filesystem initialized");
 }
-
-
 
 FATType get_fat_type(uint32_t total_clusters, uint16_t bytes_per_sector) {
     // ExFAT currently not supported
