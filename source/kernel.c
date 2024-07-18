@@ -16,7 +16,7 @@ void kernel_main(void) {
     init_idt();
     init_pit();
     init_disk();
-    init_fat();
+    // init_fat();    // Currently non-functional
 	init_keyboard();
 
     enable_interrupts();

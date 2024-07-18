@@ -9,6 +9,8 @@
 #include "types.h"
 #include "disk.h"
 
+#define MAX_PATH_LENGTH 256
+
 typedef enum {
     FAT12,
     FAT16,
@@ -138,6 +140,8 @@ typedef struct {
 } __attribute__((packed)) FAT_Filesystem;
 
 void init_fat(void);
-FATType get_fat_type(uint32_t total_clusters, uint16_t sectorsize);
+FATType get_fat_type(uint32_t total_clusters, uint16_t bytes_per_sector);
+
+
 
 #endif //FAT_H
