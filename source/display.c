@@ -140,16 +140,38 @@ void print_char(unsigned char c) {
     move_cursor(current_row, current_col);
 }
 
-void print_uint16(uint16_t value) {
-    char buffer[6];
-    int i = 4;
-
+void print_uint8(uint8_t value) {
     if (value == 0) {
         print_char('0');
         return;
     }
 
-    while (value > 0) {
+    char buffer[3];
+    int i = 2;
+
+    while (value > 0 && i >= 0) {
+        buffer[i] = (value % 10) + '0';  // Convert digit to ASCII
+        value /= 10;
+        i--;
+    }
+
+    i++;
+    while (i < 3) {
+        print_char(buffer[i]);
+        i++;
+    }
+}
+
+void print_uint16(uint16_t value) {
+    if (value == 0) {
+        print_char('0');
+        return;
+    }
+
+    char buffer[5];
+    int i = 4;
+
+    while (value > 0 && i >= 0) {
         buffer[i] = (value % 10) + '0';  // Convert digit to ASCII
         value /= 10;
         i--;
@@ -163,22 +185,22 @@ void print_uint16(uint16_t value) {
 }
 
 void print_uint32(uint32_t value) {
-    char buffer[11];
-    int i = 10;
-
     if (value == 0) {
         print_char('0');
         return;
     }
 
-    while (value > 0) {
+    char buffer[10];
+    int i = 9;
+
+    while (value > 0 && i >= 0) {
         buffer[i] = (value % 10) + '0';  // Convert digit to ASCII
         value /= 10;
         i--;
     }
 
     i++;
-    while (i < 11) {
+    while (i < 10) {
         print_char(buffer[i]);
         i++;
     }
@@ -194,6 +216,19 @@ void print_uint32_hex(uint32_t value) {
     char buffer[9];
     int_to_hex_str(value, buffer);
     print(buffer);
+}
+
+void print_hex(uint32_t value, int num_digits) {
+    char buffer[9];
+    int_to_hex_str(value, buffer);
+
+    // Pad with zeros
+    int start = 8 - num_digits;
+    if (start < 0) start = 0;
+
+    for (int i = start; buffer[i] != '\0'; i++) {
+        print_char(buffer[i]);
+    }
 }
 
 void println(const char* str) {
