@@ -18,6 +18,7 @@ typedef struct MemoryBlock {
 } MemoryBlock;
 
 void init_memory(void);
+void merge_surrounding_free_blocks(MemoryBlock* block);
 void* memset(void* dst0, int value, size_t length);
 void* memcpy(void* dst0, const void* src0, size_t length);
 void* malloc(size_t size);

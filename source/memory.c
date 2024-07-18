@@ -19,6 +19,33 @@ malloc(), calloc() and free() were based on a simplified implementation of a com
 static uint32_t heap[MEMORY_SIZE];    // 1MB
 static MemoryBlock* head = NULL;
 
+void merge_surrounding_free_blocks(MemoryBlock* block) {
+    MemoryBlock* current = head;
+    MemoryBlock* previous = NULL;
+
+    while (current && current != block) {    // Loop until we find the block, or reach the end of the linked list
+        previous = current;
+        current = current->Next;
+    }
+
+    if (!current) {    // Block not in linked list
+        return;
+    }
+
+    // merge with previous block if free
+    if (previous && previous->IsFree) {
+        previous->Size += sizeof(MemoryBlock) + block->Size;
+        previous->Next = block->Next;
+        current = previous;
+    }
+
+    // merge with all subsequent blocks if free
+    while (current->Next && current->Next->IsFree) {
+        current->Size += sizeof(MemoryBlock) + current->Next->Size;
+        current->Next = current->Next->Next;
+    }
+}
+
 // NOTE: I DID NOT WRITE THIS, ALL CREDIT GOES TO PHILLIP JOHNSTON
 // From: https://embeddedartistry.com/blog/2017/03/22/memset-memcpy-memcmp-and-memmove/
 void* memset(void* dst0, int value, size_t length) {
@@ -166,8 +193,15 @@ void* calloc(size_t num_items, size_t size) {
     return result;
 }
 
-void free(void *ptr) {    // TODO: Implement free
-    return;
+void free(void *ptr) {
+    if (!ptr) {
+        return;
+    }
+
+    MemoryBlock* block = (MemoryBlock*)ptr - 1;
+    block->IsFree = TRUE;
+
+    merge_surrounding_free_blocks(block);
 }
 
 // for debug only! (incl, not incl)
