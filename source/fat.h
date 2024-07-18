@@ -139,9 +139,65 @@ typedef struct {
     };
 } __attribute__((packed)) FAT_Filesystem;
 
+// Using information from: https://uefi.org/specs/UEFI/2.10/05_GUID_Partition_Table_Format.html#legacy-mbr-partition-record
+typedef struct {
+    uint8_t  BootIndicator;
+    uint8_t  StartingCHS[3];
+	/* OS Types (partition types)
+    0xEF (i.e., UEFI System Partition) defines a UEFI system partition.
+
+    0xEE (i.e., GPT Protective) is used by a protective MBR (see 5.2.2) to define a fake partition covering the entire disk.
+	*/
+    uint8_t OSType;
+	EndingCHS[3];
+    uint32_t StartingLBA;
+    uint32_t SizeInLBA;
+} __attribute__((packed)) LegacyMBRPartitionRecord;
+
+// Using information from: https://uefi.org/specs/UEFI/2.10/05_GUID_Partition_Table_Format.html
+typedef struct {
+    uint8_t  BootCode[424];
+	uint32_t UniqueMBRDiskSignature;
+	uint16_t Unknown;
+	LegacyMBRPartitionRecord PartitionRecord[4];
+	uint16_t BootSignature;       // MUST BE 0xAA55
+} __attribute__((packed)) LegacyMBR;
+
+typedef struct {
+	uint8_t RequiredPartition : 1;
+	uint8_t NoBlockIOProtocol : 1;
+	uint8_t LegacyBIOSBootable : 1;
+	uint8_t Reserved : 45;
+	uint16_t Reserved2;
+} __attribute__((packed)) GPTPartitionEntryAttributes;
+
+typedef struct {
+    uint8_t PartitionTypeGUID[16];
+    uint8_t UniquePartitionGUID[16];
+    uint64_t StartingLBA;
+    uint64_t EndingLBA;
+    GPTPartitionEntryAttributes Attributes;
+    uint16_t PartitionName[36];		// Null terminated string (UTF-16) - Human readable partition name
+} __attribute__((packed)) GPTPartitionEntry;
+
+typedef struct {
+	uint8_t  Signature[8];
+    uint32_t Revision;
+    uint32_t HeaderSize;
+    uint32_t HeaderCRC32;
+    uint32_t Reserved;		// Must be 0
+    uint64_t MyLBA;			// LBA containing this structure
+    uint64_t AlternateLBA;
+    uint64_t FirstUsableLBA;
+    uint64_t LastUsableLBA;
+    uint8_t  DiskGUID[16];
+    uint64_t PartitionEntryLBA;
+    uint32_t NumberOfPartitionEntries;
+    uint32_t SizeOfPartitionEntry;
+    uint32_t PartitionEntryArrayCRC32;
+} __attribute__((packed)) GPTHeader;
+
 void init_fat(void);
 FATType get_fat_type(uint32_t total_clusters, uint16_t bytes_per_sector);
-
-
 
 #endif //FAT_H

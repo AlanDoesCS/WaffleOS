@@ -1,7 +1,8 @@
 //
 // Created by Alan on 12/07/2024.
 // Based on: https://wiki.osdev.org/FAT
-//
+// and: https://wiki.osdev.org/GPT
+// and: https://uefi.org/specs/UEFI/2.10/05_GUID_Partition_Table_Format.html
 
 #include "fat.h"
 #include "disk.h"
@@ -13,6 +14,12 @@
 #include "timer.h"
 
 static FAT_Filesystem current_filesystem;
+
+void parse_guid_partition_table(uint8_t* gpt_sector) {
+}
+
+void print_guid(uint8_t* guid) {
+}
 
 void init_fat(void) {
     uint8_t boot_sector[SECTOR_SIZE];
@@ -73,22 +80,6 @@ void init_fat(void) {
 
 	if (BPB->SectorsPerCluster == 0) {
         println("[FAT] Error: SectorsPerCluster is 0");
-
-		println("[FAT] Boot sector contents:");	// debug
-		for (int i = 0; i < 512; i++) {
-			if ((i / 16 > 16) && (i / 16 < 30)) {	// adjust to skip empty space (00 s)
-	            continue;
-            }
-
-			if (i % 16 == 0) {
-        		print("\n");
-        		print_hex(i, 4);
-        		print(": ");
-    		}
-    		print_hex(boot_sector[i], 2);
-    		print(" ");
-		}
-		println("");
         return;
     }
 
@@ -123,6 +114,8 @@ void init_fat(void) {
 
     println("[FAT] FAT filesystem initialized");
 }
+
+
 
 FATType get_fat_type(uint32_t total_clusters, uint16_t bytes_per_sector) {
     // ExFAT currently not supported

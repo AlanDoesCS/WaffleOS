@@ -5,6 +5,7 @@
 
 #include "memory.h"
 #include "types.h"
+#include "display.h"
 
 #define wsize sizeof(uint32_t)
 #define wmask (wsize - 1)
@@ -115,4 +116,19 @@ void* memcpy(void* dst0, const void* src0, size_t length) {
     }
     done:
         return (dst0);
+}
+
+// for debug only! (incl, not incl)
+void memdump_array(uint8_t* address, int start, int end) {
+    for (int i = start; i < end; i++) {
+
+        if (i % 16 == 0) {
+            print("\n");
+            print_hex(i, 4);
+            print(": ");
+        }
+        print_hex(address[i], 2);
+        print(" ");
+    }
+    println("");
 }
