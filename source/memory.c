@@ -1,7 +1,13 @@
 //
 // Created by Alan on 18/07/2024.
-// Derived from: https://embeddedartistry.com/blog/2017/03/22/memset-memcpy-memcmp-and-memmove/
-// and: https://opensource.apple.com/source/xnu/xnu-2050.7.9/libsyscall/wrappers/memcpy.c
+/* Derived from: https://embeddedartistry.com/blog/2017/03/22/memset-memcpy-memcmp-and-memmove/
+and: https://opensource.apple.com/source/xnu/xnu-2050.7.9/libsyscall/wrappers/memcpy.c
+
+malloc(), calloc() and free() were based on a simplified implementation of a combination of:
+- https://arjunsreedharan.org/post/148675821737/memory-allocators-101-write-a-simple-memory
+- https://embeddedartistry.com/blog/2017/02/15/implementing-malloc-first-fit-free-list/
+- logic from: https://pages.cs.wisc.edu/~remzi/OSTEP/vm-api.pdf
+*/
 
 #include "memory.h"
 #include "types.h"
@@ -9,6 +15,9 @@
 
 #define wsize sizeof(uint32_t)
 #define wmask (wsize - 1)
+
+static uint32_t heap[MEMORY_SIZE];    // 1MB
+static MemoryBlock* head = NULL;
 
 // NOTE: I DID NOT WRITE THIS, ALL CREDIT GOES TO PHILLIP JOHNSTON
 // From: https://embeddedartistry.com/blog/2017/03/22/memset-memcpy-memcmp-and-memmove/
@@ -118,6 +127,49 @@ void* memcpy(void* dst0, const void* src0, size_t length) {
         return (dst0);
 }
 
+void* malloc(size_t size) {    // TODO: Implement malloc, calloc and free
+    MemoryBlock *current, *previous;
+    void* result;
+
+    if (!head) {
+        init_memory();
+    }
+
+    current = head;
+    while (current) {
+        if (current->IsFree && current->Size >= size) {    // If the block is free and large enough
+            if (current->Size > size + sizeof(MemoryBlock) + BLOCK_SIZE) {    // If the block is larger than the requested size
+                MemoryBlock* new_block = (MemoryBlock*)((uint8_t*)current + sizeof(MemoryBlock) + size);
+                new_block->Size = current->Size - size - sizeof(MemoryBlock);
+                new_block->IsFree = TRUE;
+                new_block->Next = current->Next;
+                current->Size = size;
+                current->Next = new_block;
+            }
+            current->IsFree = FALSE;
+            result = (void*)(current + 1);
+            return result;
+        }
+        previous = current;
+        current = current->Next;
+    }
+
+    return NULL;
+}
+
+void* calloc(size_t num_items, size_t size) {
+    size_t total_size = num_items * size;
+    void* result = malloc(total_size);
+    if (result) {
+        memset(result, 0, total_size);
+    }
+    return result;
+}
+
+void free(void *ptr) {    // TODO: Implement free
+    return;
+}
+
 // for debug only! (incl, not incl)
 void memdump_array(uint8_t* address, int start, int end) {
     for (int i = start; i < end; i++) {
@@ -131,4 +183,12 @@ void memdump_array(uint8_t* address, int start, int end) {
         print(" ");
     }
     println("");
+}
+
+void init_memory(void) {
+    head = (MemoryBlock*)heap;
+    head->Size = MEMORY_SIZE - sizeof(MemoryBlock);
+    head->IsFree = TRUE;
+    head->Next = NULL;
+    println("[MEMORY] Heap initialised");
 }

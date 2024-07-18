@@ -5,6 +5,9 @@
 #ifndef TYPES_H
 #define TYPES_H
 
+#define TRUE 1
+#define FALSE 0
+
 #define NULL ((void*)0)
 typedef typeof(sizeof(0)) size_t;
 

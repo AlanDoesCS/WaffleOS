@@ -6,6 +6,7 @@
 #include "kernel.h"
 #include "disk.h"
 #include "timer.h"
+#include "memory.h"
 
 void kernel_main(void) __attribute__((section(".text.kernel_entry")));
 
@@ -13,15 +14,16 @@ void kernel_main(void) {
     clear();
 	print_splash();
 
+    init_memory();
     init_idt();
     init_pit();
     init_disk();
-    init_fat();    // Currently non-functional
-	//init_keyboard();
+    // init_fat();    // Currently non-functional
+	init_keyboard();
 
-    //enable_interrupts();
+    enable_interrupts();
 
-    // println("[KERNEL] Kernel initialisation complete\n");
+    println("[KERNEL] Kernel initialisation complete\n");
     while(1) {
         print("root $ ");
         char* input = read_line();
