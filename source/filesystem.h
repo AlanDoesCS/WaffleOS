@@ -198,6 +198,7 @@ typedef struct {
 } __attribute__((packed)) GPTHeader;
 
 void init_filesystem(void);
+void init_fat_partition(uint32_t partition_start_lba, uint8_t* boot_sector);
 void parse_gpt();
 void parse_mbr(LegacyMBR* mbr);
 FATType get_fat_type(uint32_t total_clusters, uint16_t bytes_per_sector);

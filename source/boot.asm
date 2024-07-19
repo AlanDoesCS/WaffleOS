@@ -20,7 +20,7 @@ start:
 
 load_kernel:
     mov bx, KERNEL_OFFSET
-    mov dh, 25                  ; load 25 sectors
+    mov dh, 30                  ; load 30 sectors
     mov dl, [BOOT_DISK]         ; load from boot disk
     call disk_load
     ret
