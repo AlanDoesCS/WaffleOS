@@ -23,10 +23,8 @@ i386-elf-gcc -ffreestanding -nostdlib -c str.c -o ../builds/str.o -m32
 i386-elf-ld -o ../builds/kernel.bin -Tlinker.ld ../builds/kernel.o ../builds/disk.o ../builds/memory.o ../builds/display.o ../builds/timer.o ../builds/keyboard.o ../builds/interrupt.o ../builds/filesystem.o ../builds/idt.o ../builds/io_functions.o ../builds/str.o --oformat binary
 
 dd if=/dev/zero of=../builds/bin/os-image.bin bs=1M count=4 # 4MB
-dd if=../builds/boot.bin of=../builds/bin/os-image.bin conv=notrunc
-dd if=../builds/kernel.bin of=../builds/bin/os-image.bin conv=notrunc seek=1
 
-# Create FAT12 filesystem
+# Create filesystem
 mkfs.vfat -F 12 ../builds/bin/os-image.bin
 # mkfs.vfat -F 16 ../builds/bin/os-image.bin  # FAT16
 # mkfs.vfat -F 32 ../builds/bin/os-image.bin  # FAT32
@@ -41,5 +39,8 @@ sudo cp ../builds/kernel.bin /mnt/floppy/
 # Unmount the image
 sudo umount /mnt/floppy
 
+# Write bootloader to first sector
+dd if=../builds/boot.bin of=../builds/bin/os-image.bin conv=notrunc bs=512 count=1
+
 # Run QEMU
-qemu-system-i386 -drive format=raw,file=../builds/bin/os-image.bin,index=0,if=floppy -d int,cpu_reset -D ../builds/qemu.log -no-reboot
+qemu-system-i386 -drive format=raw,file=../builds/bin/os-image.bin,index=0,if=floppy -d int,cpu_reset -D ../builds/qemu.log # -no-reboot
