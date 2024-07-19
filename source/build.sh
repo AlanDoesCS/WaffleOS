@@ -22,25 +22,30 @@ i386-elf-gcc -ffreestanding -nostdlib -c str.c -o ../builds/str.o -m32
 # Link the kernel
 i386-elf-ld -o ../builds/kernel.bin -Tlinker.ld ../builds/kernel.o ../builds/disk.o ../builds/memory.o ../builds/display.o ../builds/timer.o ../builds/keyboard.o ../builds/interrupt.o ../builds/filesystem.o ../builds/idt.o ../builds/io_functions.o ../builds/str.o --oformat binary
 
-dd if=/dev/zero of=../builds/bin/os-image.bin bs=1M count=4 # 4MB
-
-# Create filesystem
-mkfs.vfat -F 12 ../builds/bin/os-image.bin
-# mkfs.vfat -F 16 ../builds/bin/os-image.bin  # FAT16
-# mkfs.vfat -F 32 ../builds/bin/os-image.bin  # FAT32
-
-# Mount the image
-sudo mkdir -p /mnt/floppy
-sudo mount ../builds/bin/os-image.bin /mnt/floppy
-
-# Copy kernel to the mounted filesystem
-sudo cp ../builds/kernel.bin /mnt/floppy/
-
-# Unmount the image
-sudo umount /mnt/floppy
+# Create a 2MB disk image
+dd if=/dev/zero of=../builds/bin/os-image.bin bs=1M count=2
 
 # Write bootloader to first sector
 dd if=../builds/boot.bin of=../builds/bin/os-image.bin conv=notrunc bs=512 count=1
 
+# Write kernel directly after bootloader
+dd if=../builds/kernel.bin of=../builds/bin/os-image.bin conv=notrunc bs=512 seek=1
+
+# Calculate the size of bootloader + kernel in sectors
+BOOT_KERNEL_SIZE=$(( ($(stat -c %s ../builds/boot.bin) + $(stat -c %s ../builds/kernel.bin) + 511) / 512 ))
+
+# Create FAT12 filesystem in the remaining space
+mkfs.vfat -F 12 -S 512 -s 1 -h 0 -n "WAFFLE" -R $BOOT_KERNEL_SIZE ../builds/bin/os-image.bin
+
+# Mount the image
+sudo mkdir -p /mnt/floppy
+sudo mount -o loop,offset=$((BOOT_KERNEL_SIZE * 512)) ../builds/bin/os-image.bin /mnt/floppy
+
+# Copy any additional files to the mounted filesystem here
+# sudo cp some_file /mnt/floppy/
+
+# Unmount the image
+sudo umount /mnt/floppy
+
 # Run QEMU
-qemu-system-i386 -drive format=raw,file=../builds/bin/os-image.bin,index=0,if=floppy -d int,cpu_reset -D ../builds/qemu.log # -no-reboot
+qemu-system-i386 -drive format=raw,file=../builds/bin/os-image.bin,index=0,if=floppy -d int,cpu_reset -D ../builds/qemu.log
