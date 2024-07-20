@@ -22,23 +22,15 @@ i386-elf-gcc -ffreestanding -nostdlib -c str.c -o ../builds/str.o -m32
 # Link the kernel
 i386-elf-ld -o ../builds/kernel.bin -Tlinker.ld ../builds/kernel.o ../builds/disk.o ../builds/memory.o ../builds/display.o ../builds/timer.o ../builds/keyboard.o ../builds/interrupt.o ../builds/filesystem.o ../builds/idt.o ../builds/io_functions.o ../builds/str.o --oformat binary
 
-# Create disk image
 dd if=/dev/zero of=../builds/bin/os-image.bin bs=512 count=2880
-
-# filesystem
-mkfs.fat -F 12 -n "MYOS" ../builds/bin/os-image.bin
-
-# Write bootloader
 dd if=../builds/boot.bin of=../builds/bin/os-image.bin conv=notrunc
-
-# Write kernel
-mcopy -i ../builds/bin/os-image.bin ../builds/kernel.bin ::
+dd if=../builds/kernel.bin of=../builds/bin/os-image.bin seek=1 conv=notrunc
 
 # hexdump
-hexdump -C ../builds/bin/os-image.bin # | head -n 20
+# hexdump -C ../builds/bin/os-image.bin # | head -n 20
 
 # Print partition table
-sudo parted ../builds/bin/os-image.bin print
+# sudo parted ../builds/bin/os-image.bin print
 
 # Run QEMU
 qemu-system-i386 -drive format=raw,file=../builds/bin/os-image.bin,index=0,if=ide -d int,cpu_reset -D ../builds/qemu.log -no-reboot
