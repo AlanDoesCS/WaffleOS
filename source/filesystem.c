@@ -39,6 +39,13 @@ void init_filesystem(void) {
         return;
     }
 
+    FAT_BPB_Bits* BPB = (FAT_BPB_Bits*)boot_sector;
+
+    // Print sectors per cluster for debugging
+    print("[FS] Sectors per cluster: ");
+    print_uint8(BPB->SectorsPerCluster);
+    print_char('\n');
+
     init_fat_partition(0, boot_sector);
 }
 

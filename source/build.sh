@@ -5,6 +5,7 @@ mkdir -p ../builds/bin
 
 # Assemble bootloader
 nasm -f bin boot.asm -o ../builds/boot.bin
+nasm -f bin boot2.asm -o ../builds/boot2.bin
 nasm -f elf32 interrupt.asm -o ../builds/interrupt.o
 nasm -f elf32 io_functions.asm -o ../builds/io_functions.o
 
@@ -20,11 +21,23 @@ i386-elf-gcc -ffreestanding -nostdlib -c filesystem.c -o ../builds/filesystem.o 
 i386-elf-gcc -ffreestanding -nostdlib -c str.c -o ../builds/str.o -m32
 
 # Link the kernel
-i386-elf-ld -o ../builds/kernel.bin -Tlinker.ld ../builds/kernel.o ../builds/disk.o ../builds/memory.o ../builds/display.o ../builds/timer.o ../builds/keyboard.o ../builds/interrupt.o ../builds/filesystem.o ../builds/idt.o ../builds/io_functions.o ../builds/str.o --oformat binary
+i386-elf-ld -o ../builds/kernel.bin -Ttext 0x20000 -Tlinker.ld ../builds/kernel.o ../builds/disk.o ../builds/memory.o ../builds/display.o ../builds/timer.o ../builds/keyboard.o ../builds/interrupt.o ../builds/filesystem.o ../builds/idt.o ../builds/io_functions.o ../builds/str.o --oformat binary
 
 dd if=/dev/zero of=../builds/bin/os-image.bin bs=512 count=2880
-dd if=../builds/boot.bin of=../builds/bin/os-image.bin conv=notrunc
-dd if=../builds/kernel.bin of=../builds/bin/os-image.bin seek=1 conv=notrunc
+mkfs.fat -F 12 -n "WAFFLE OS" ../builds/bin/os-image.bin
+
+dd if=../builds/boot.bin of=../builds/bin/os-image.bin conv=notrunc bs=512 count=1
+
+mkdir -p mnt
+sudo mount ../builds/bin/os-image.bin mnt
+
+# Copy the second stage bootloader and kernel to the disk image
+sudo cp ../builds/boot2.bin mnt/BOOT2.BIN
+sudo cp ../builds/kernel.bin mnt/KERNEL.BIN
+
+# Unmount the disk image
+sudo umount mnt
+rmdir mnt
 
 # hexdump
 # hexdump -C ../builds/bin/os-image.bin # | head -n 20
