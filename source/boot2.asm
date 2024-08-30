@@ -23,6 +23,30 @@ start:
     ; Save boot drive
     mov [boot_drive], dl
 
+    ; Read BPB values from the first sector
+    mov ax, 0           ; LBA 0 (first sector)
+    mov bx, buffer      ; Read into our buffer
+    mov cl, 1           ; Read 1 sector
+    call disk_read
+
+    ; Copy BPB values from buffer to our variables
+    mov ax, [buffer + 11]       ; Bytes per sector
+    mov [bdb_bytes_per_sector], ax
+    mov ax, [buffer + 13]       ; Sectors per cluster
+    mov [bdb_sectors_per_cluster], ax
+    mov ax, [buffer + 14]       ; Reserved sectors
+    mov [bdb_reserved_sectors], ax
+    mov al, [buffer + 16]       ; Number of FATs
+    mov [bdb_fat_count], al
+    mov ax, [buffer + 17]       ; Root directory entries
+    mov [bdb_dir_entries_count], ax
+    mov ax, [buffer + 24]       ; Sectors per FAT
+    mov [bdb_sectors_per_fat], ax
+    mov ax, [buffer + 26]       ; Sectors per track
+    mov [bdb_sectors_per_track], ax
+    mov ax, [buffer + 28]       ; Number of heads
+    mov [bdb_heads], ax
+
     ; Print loading message
     mov si, msg_loading_kernel
     call puts
@@ -190,6 +214,13 @@ puts:
 ; Disk routines
 ;
 
+; Disk error function
+disk_error:
+    mov si, msg_disk_error
+    call puts
+    cli                 ; Clear interrupts
+    hlt                 ; Halt the system
+
 ;
 ; Converts an LBA address to a CHS address
 ; Parameters:
@@ -319,16 +350,21 @@ CODE_SEG equ gdt_code - gdt_start
 DATA_SEG equ gdt_data - gdt_start
 
 ; Variables
-boot_drive:          db 0
-kernel_cluster:      dw 0
-msg_loading_kernel:  db 'Loading kernel...', 13, 10, 0
-msg_kernel_not_found: db 'KERNEL.BIN not found!', 13, 10, 0
-file_kernel_bin:     db 'KERNEL  BIN'
+boot_drive:              db 0
+kernel_cluster:          dw 0
+msg_loading_kernel:      db 'Loading kernel...', 13, 10, 0
+msg_kernel_not_found:    db 'KERNEL.BIN not found!', 13, 10, 0
+file_kernel_bin:         db 'KERNEL  BIN'
+msg_disk_error:          db 'Disk read error!', ENDL, 0
 
-; Include necessary data from FAT12 header
-; fixed value :( big sad
-bdb_reserved_sectors:    dw 1
-bdb_sectors_per_fat:     dw 9
-bdb_dir_entries_count:   dw 0E0h
+; Dynamically read BPB variables
+bdb_bytes_per_sector:    dw 0
+bdb_sectors_per_cluster: dw 0
+bdb_reserved_sectors:    dw 0
+bdb_fat_count:           db 0
+bdb_dir_entries_count:   dw 0
+bdb_sectors_per_fat:     dw 0
+bdb_sectors_per_track:   dw 0
+bdb_heads:               dw 0
 
 buffer:
