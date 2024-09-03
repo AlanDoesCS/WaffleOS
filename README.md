@@ -8,7 +8,7 @@ A Unix-like open source operating system written in NASM and C, with the goal of
 ![GitHub contributors](https://img.shields.io/github/contributors/AlanDoesCS/WaffleOS)
 ![GitHub Repo stars](https://img.shields.io/github/stars/AlanDoesCS/WaffleOS)
 ![GitHub forks](https://img.shields.io/github/forks/AlanDoesCS/WaffleOS)
-
+![Hack Club arcade 2024 finalist](https://img.shields.io/badge/Hack%20Club%20arcade%202024-finalist-gold?logo=https%3A%2F%2Fassets.hackclub.com%2Ficon-rounded.png&logoSize=auto&labelColor=orange)
 
 ---
 # Table of contents
