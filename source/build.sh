@@ -5,6 +5,7 @@ mkdir -p ../builds/bin
 
 # Assemble bootloader
 nasm -f bin boot.asm -o ../builds/boot.bin
+echo "Size of boot.bin: $(wc -c < ../builds/boot.bin) bytes"
 nasm -f bin boot2.asm -o ../builds/boot2.bin
 nasm -f elf32 interrupt.asm -o ../builds/interrupt.o
 nasm -f elf32 io_functions.asm -o ../builds/io_functions.o
@@ -40,10 +41,12 @@ sudo umount mnt
 rmdir mnt
 
 # hexdump
-# hexdump -C ../builds/bin/os-image.bin # | head -n 20
+hexdump -C ../builds/bin/os-image.bin # | head -n 20
 
 # Print partition table
 # sudo parted ../builds/bin/os-image.bin print
 
 # Run QEMU
-qemu-system-i386 -drive format=raw,file=../builds/bin/os-image.bin,index=0,if=ide -d int,cpu_reset -D ../builds/qemu.log -no-reboot
+# qemu-system-i386 -drive format=raw,file=../builds/bin/os-image.bin,index=0,if=ide -d int,cpu_reset -D ../builds/qemu.log
+# floppy
+qemu-system-i386 -drive file=../builds/bin/os-image.bin,format=raw,index=0,if=floppy -boot a -D ../builds/qemu.log

@@ -9,6 +9,10 @@ bits 16
 %define KERNEL_LOAD_OFFSET 0x0000
 
 start:
+    ; Print loading message
+    mov si, msg_loaded_boot2
+    call puts
+
     ; Set up segments
     mov ax, cs
     mov ds, ax
@@ -352,10 +356,11 @@ DATA_SEG equ gdt_data - gdt_start
 ; Variables
 boot_drive:              db 0
 kernel_cluster:          dw 0
-msg_loading_kernel:      db 'Loading kernel...', 13, 10, 0
-msg_kernel_not_found:    db 'KERNEL.BIN not found!', 13, 10, 0
+msg_loaded_boot2:      db '[BOOT S2] Loaded BOOT2.BIN', 13, 10, 0
+msg_loading_kernel:      db '[BOOT S2] Loading kernel...', 13, 10, 0
+msg_kernel_not_found:    db '[BOOT S2] KERNEL.BIN not found!', 13, 10, 0
 file_kernel_bin:         db 'KERNEL  BIN'
-msg_disk_error:          db 'Disk read error!', ENDL, 0
+msg_disk_error:          db '[BOOT S2] Disk read error!', ENDL, 0
 
 ; Dynamically read BPB variables
 bdb_bytes_per_sector:    dw 0

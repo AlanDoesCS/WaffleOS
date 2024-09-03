@@ -19,7 +19,7 @@ bdb_reserved_sectors:       dw 1
 bdb_fat_count:              db 2
 bdb_dir_entries_count:      dw 0E0h
 bdb_total_sectors:          dw 2880                 ; 2880 * 512 = 1.44MB
-bdb_media_descriptor_type:  db 0F8h
+bdb_media_descriptor_type:  db 0F0h
 bdb_sectors_per_fat:        dw 9
 bdb_sectors_per_track:      dw 18
 bdb_heads:                  dw 2
@@ -27,7 +27,7 @@ bdb_hidden_sectors:         dd 0
 bdb_large_sector_count:     dd 0
 
 ; extended boot record
-ebr_drive_number:           db 0x80                 ; 0x00 floppy, 0x80 hdd
+ebr_drive_number:           db 0x00                 ; 0x00 floppy, 0x80 hdd
                             db 0                    ; reserved
 ebr_signature:              db 29h
 ebr_volume_id:              db 12h, 34h, 56h, 78h   ; Serial Num
@@ -52,28 +52,24 @@ start:
     mov si, msg_loading_stage2
     call puts
 
-    ; read drive parameters (sectors per track and head count),
-    ; instead of relying on data on formatted disk
-    push es
     mov ah, 08h
+    mov dl, [ebr_drive_number]
     int 13h
     jc disk_error
-    pop es
 
     and cl, 0x3F                        ; remove top 2 bits
     xor ch, ch
-    mov [bdb_sectors_per_track], cx     ; sector count
+    mov [bdb_sectors_per_track], cx     ; save sector count
 
     inc dh
-    mov [bdb_heads], dh                 ; head count
+    mov [bdb_heads], dh                 ; Save head count
 
     ; compute LBA of root directory = reserved + fats * sectors_per_fat
     ; note: this section can be hardcoded
     mov ax, [bdb_sectors_per_fat]
-    mov bl, [bdb_fat_count]
-    xor bh, bh
-    mul bx                              ; ax = (fats * sectors_per_fat)
-    add ax, [bdb_reserved_sectors]      ; ax = LBA of root directory
+    movzx bx, byte [bdb_fat_count]
+    mul bx
+    add ax, [bdb_reserved_sectors]
     push ax
 
     ; compute size of root directory = (32 * number_of_entries) / bytes_per_sector
@@ -117,7 +113,6 @@ start:
     jmp $
 
 .found_stage2:
-
     ; di should have the address to the entry
     mov ax, [di + 26]                   ; First logical cluster field (offset 26)
     mov [stage2_cluster], ax
@@ -135,11 +130,18 @@ start:
 .load_stage2_loop:
     ; Read next cluster
     mov ax, [stage2_cluster]
-    
-    ; not nice :( hardcoded value
-    add ax, 31                          ; first cluster = (stage2_cluster - 2) * sectors_per_cluster + start_sector
-                                        ; start sector = reserved + fats + root directory size = 1 + 18 + 14 = 33
-    mov cl, 1
+    sub ax, 2
+    movzx cx, byte [bdb_sectors_per_cluster]
+    mul cx
+    mov cx, ax
+
+    mov ax, [bdb_reserved_sectors]
+    add ax, [bdb_sectors_per_fat]
+    movzx dx, byte [bdb_fat_count]
+    mul dx
+    add ax, cx
+
+    mov cl, [bdb_sectors_per_cluster]
     mov dl, [ebr_drive_number]
     call disk_read
 
@@ -178,18 +180,6 @@ start:
     ; jump to stage 2
     mov dl, [ebr_drive_number]          ; boot device in dl
     jmp 0x7E00
-
-; Error handling -------------------------------------------------------------------------------------------------------
-
-disk_error:
-    mov si, msg_read_failed
-    call puts
-    jmp $
-
-.halt:
-    cli                         ; disable interrupts, this way CPU can't get out of "halt" state
-    hlt
-
 
 ;
 ; Prints a string to the screen
@@ -325,13 +315,18 @@ disk_reset:
     popa
     ret
 
-msg_loading_stage2:     db "[BOOT] Loading stage 2 bootloader", ENDL, 0
-msg_read_failed:        db "[BOOT] Read from disk failed!", ENDL, 0
-msg_stage2_not_found:   db "[BOOT] BOOT2.BIN file not found!", ENDL, 0
+disk_error:
+    mov si, msg_read_failed
+    call puts
+    jmp $
+
+msg_loading_stage2:     db "BOOT->BOOT2", ENDL, 0 ; loading stage2 message
+msg_read_failed:        db "Rd Err", ENDL, 0
+msg_stage2_not_found:   db "BOOT2 not found!", ENDL, 0
 file_stage2_bin:        db "BOOT2   BIN"
 stage2_cluster:         dw 0
 
+buffer:
+
 times 510-($-$$) db 0
 dw 0AA55h
-
-buffer:
