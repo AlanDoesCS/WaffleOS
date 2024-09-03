@@ -18,10 +18,22 @@ A Unix-like open source operating system written in NASM and C, with the goal of
 
 ---
 ## Features
-*WaffleOS is currently very early stages, so it may be prone to errors*
+- Bootloader
+    - Boots into 32 bit protected mode, and loads the C kernel
+- Disk driver
+    - A simple ATA PIO mode disk read/write driver
+- CLI
+    - VGA text mode to display information
+- FAT12 Support (WIP)
+- Interrupt descriptor table
+- Memory management
+    - allows memory management with malloc(), calloc() and free()
+- Programmable Interval Timer
+    - allow precise time delays
 
 ---
 ## Installation
+*WaffleOS is currently very early stages, so it may be prone to errors*
 
 ### (For users) Virtual Machine (QEMU)
 *This guide requires you to be on a Linux based system, if on Windows, then it is recommended to install the "Windows Subsystem for Linux" (WSL)*
