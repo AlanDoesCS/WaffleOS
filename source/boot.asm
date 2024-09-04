@@ -2,10 +2,10 @@
 
 ; Stage 1 bootloader
 
+%define ENDL 0x0D, 0x0A
+
 org 0x7C00
 bits 16
-
-%define ENDL 0x0D, 0x0A
 
 ; FAT12 header ---------------------------------------------------------------------------------------------------------
 
@@ -52,10 +52,12 @@ start:
     mov si, msg_loading_stage2
     call puts
 
+    push es
     mov ah, 08h
     mov dl, [ebr_drive_number]
     int 13h
     jc disk_error
+    pop es
 
     and cl, 0x3F                        ; remove top 2 bits
     xor ch, ch
@@ -65,11 +67,11 @@ start:
     mov [bdb_heads], dh                 ; Save head count
 
     ; compute LBA of root directory = reserved + fats * sectors_per_fat
-    ; note: this section can be hardcoded
     mov ax, [bdb_sectors_per_fat]
-    movzx bx, byte [bdb_fat_count]
-    mul bx
-    add ax, [bdb_reserved_sectors]
+    mov bl, [bdb_fat_count]
+    xor bh, bh
+    mul bx                              ; ax = (fats * sectors_per_fat)
+    add ax, [bdb_reserved_sectors]      ; ax = LBA of root directory
     push ax
 
     ; compute size of root directory = (32 * number_of_entries) / bytes_per_sector
@@ -83,7 +85,6 @@ start:
     inc ax                              ; division remainder != 0, add 1
                                         ; this means we have a sector only partially filled with entries
 .root_dir_after:
-
     ; read root directory
     mov cl, al                          ; cl = number of sectors to read = size of root directory
     pop ax                              ; ax = LBA of root directory
@@ -92,27 +93,28 @@ start:
     call disk_read
 
     ; Find boot2.bin
-    mov cx, [bdb_dir_entries_count]
+    xor bx, bx
     mov di, buffer
 
 .find_stage2:
-    push cx
-    mov cx, 11                          ; compare 11 bytes (characters)
     mov si, file_stage2_bin
+    mov cx, 11                          ; compare 11 bytes (characters)
     push di
     repe cmpsb
     pop di
     je .found_stage2
-    pop cx
     add di, 32
-    loop .find_stage2
+    inc bx
+    cmp bx, [bdb_dir_entries_count]
+    jl .find_stage2
 
     ; Stage2 not found
     mov si, msg_stage2_not_found
     call puts
-    jmp $
+    jmp wait_key_and_reboot
 
 .found_stage2:
+
     ; di should have the address to the entry
     mov ax, [di + 26]                   ; First logical cluster field (offset 26)
     mov [stage2_cluster], ax
@@ -125,29 +127,21 @@ start:
     call disk_read
 
     ; Read stage2 and process FAT chain
-    mov bx, 0x7E00                      ; Load stage2 right after bootloader
+    mov bx, STAGE2_LOAD_SEGMENT
+    mov es, bx
+    mov bx, 0x0
 
 .load_stage2_loop:
     ; Read next cluster
     mov ax, [stage2_cluster]
-    sub ax, 2
-    movzx cx, byte [bdb_sectors_per_cluster]
-    mul cx
-    mov cx, ax
-
-    mov ax, [bdb_reserved_sectors]
-    add ax, [bdb_sectors_per_fat]
-    movzx dx, byte [bdb_fat_count]
-    mul dx
-    add ax, cx
-
-    mov cl, [bdb_sectors_per_cluster]
+    add ax, 31
+    mov cl, 1
     mov dl, [ebr_drive_number]
     call disk_read
 
     add bx, [bdb_bytes_per_sector]
 
-    ; compute location of next cluster
+    ; Compute location of next cluster
     mov ax, [stage2_cluster]
     mov cx, 3
     mul cx
@@ -176,10 +170,21 @@ start:
     jmp .load_stage2_loop
 
 .read_finish:
+    mov si, msg_loading_stage2
+    call puts
 
     ; jump to stage 2
     mov dl, [ebr_drive_number]          ; boot device in dl
-    jmp 0x7E00
+    mov ax, STAGE2_LOAD_SEGMENT
+    mov ds, ax
+    mov es, ax
+
+    jmp STAGE2_LOAD_SEGMENT:STAGE2_LOAD_OFFSET
+
+    ; Fallback if jump fails
+    mov si, msg_jump_failed
+    call puts
+    jmp wait_key_and_reboot
 
 ;
 ; Prints a string to the screen
@@ -258,7 +263,6 @@ lba_to_chs:
 ;   - es:bx: memory address where to store read data
 ;
 disk_read:
-
     push ax                             ; save registers we will modify
     push bx
     push cx
@@ -268,7 +272,7 @@ disk_read:
     push cx                             ; temporarily save CL (number of sectors to read)
     call lba_to_chs                     ; compute CHS
     pop ax                              ; AL = number of sectors to read
-    
+
     mov ah, 02h
     mov di, 3                           ; retry count
 
@@ -276,6 +280,7 @@ disk_read:
     pusha                               ; save all registers, we don't know what bios modifies
     stc                                 ; set carry flag, some BIOS'es don't set it
     int 13h                             ; carry flag cleared = success
+
     jnc .done                           ; jump if carry not set
 
     ; read failed
@@ -309,7 +314,6 @@ disk_read:
 disk_reset:
     pusha
     mov ah, 0
-    stc
     int 13h
     jc disk_error
     popa
@@ -320,11 +324,20 @@ disk_error:
     call puts
     jmp $
 
-msg_loading_stage2:     db "BOOT->BOOT2", ENDL, 0 ; loading stage2 message
+wait_key_and_reboot:
+    mov ah, 0
+    int 16h                     ; wait for keypress
+    jmp 0FFFFh:0                ; jump to beginning of BIOS, should reboot
+
+msg_loading_stage2:     db "Lding BOOT2", ENDL, 0 ; loading stage2 message
 msg_read_failed:        db "Rd Err", ENDL, 0
+msg_jump_failed:        db "Jmp Err", ENDL, 0
 msg_stage2_not_found:   db "BOOT2 not found!", ENDL, 0
 file_stage2_bin:        db "BOOT2   BIN"
 stage2_cluster:         dw 0
+
+STAGE2_LOAD_SEGMENT equ 0x2000
+STAGE2_LOAD_OFFSET equ 0x0
 
 buffer:
 

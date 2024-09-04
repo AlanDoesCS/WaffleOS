@@ -1,17 +1,19 @@
 ; Stage 2 Bootloader
 
-org 0x7E00
+org 0x0
 bits 16
 
 %define ENDL 0x0D, 0x0A
 
-%define KERNEL_LOAD_SEGMENT 0x2000
-%define KERNEL_LOAD_OFFSET 0x0000
+%define KERNEL_LOAD_SEGMENT 0x3000
+%define KERNEL_LOAD_OFFSET 0x0
 
 start:
     ; Print loading message
     mov si, msg_loaded_boot2
     call puts
+
+    jmp $
 
     ; Set up segments
     mov ax, cs
