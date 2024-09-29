@@ -49,4 +49,4 @@ hexdump -C ../builds/bin/os-image.bin # | head -n 20
 # Run QEMU
 # qemu-system-i386 -drive format=raw,file=../builds/bin/os-image.bin,index=0,if=ide -d int,cpu_reset -D ../builds/qemu.log
 # floppy
-qemu-system-i386 -drive file=../builds/bin/os-image.bin,format=raw,index=0,if=floppy -boot a -d int,cpu_reset -D ../builds/qemu.log -monitor stdio
+qemu-system-i386 -drive file=../builds/bin/os-image.bin,format=raw,index=0,if=floppy -boot a -d int,cpu_reset -D ../builds/qemu.log -monitor stdio #-no-reboot

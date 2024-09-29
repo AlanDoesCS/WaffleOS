@@ -3,17 +3,34 @@
 org 0x0
 bits 16
 
-%define ENDL 0x0D, 0x0A
+%define CR 0x0D
+%define LF 0x0A
+%define ENDL CR, LF
 
 %define KERNEL_LOAD_SEGMENT 0x3000
-%define KERNEL_LOAD_OFFSET 0x0
+%define KERNEL_LOAD_OFFSET 0x0000
 
 start:
     ; Print loading message
     mov si, msg_loaded_boot2
     call puts
 
-    jmp $
+    ; Save boot drive
+    mov [ebr_drive_number], dl
+
+    push es
+    mov ah, 08h
+    mov dl, [ebr_drive_number]
+    int 13h
+    jc disk_error
+    pop es
+
+    and cl, 0x3F                        ; remove top 2 bits
+    xor ch, ch
+    mov [bdb_sectors_per_track], cx     ; save sector count
+
+    inc dh
+    mov [bdb_heads], dh                 ; Save head count
 
     ; Set up segments
     mov ax, cs
@@ -24,34 +41,7 @@ start:
 
     ; Set up stack
     mov ss, ax
-    mov sp, 0x7C00
-
-    ; Save boot drive
-    mov [boot_drive], dl
-
-    ; Read BPB values from the first sector
-    mov ax, 0           ; LBA 0 (first sector)
-    mov bx, buffer      ; Read into our buffer
-    mov cl, 1           ; Read 1 sector
-    call disk_read
-
-    ; Copy BPB values from buffer to our variables
-    mov ax, [buffer + 11]       ; Bytes per sector
-    mov [bdb_bytes_per_sector], ax
-    mov ax, [buffer + 13]       ; Sectors per cluster
-    mov [bdb_sectors_per_cluster], ax
-    mov ax, [buffer + 14]       ; Reserved sectors
-    mov [bdb_reserved_sectors], ax
-    mov al, [buffer + 16]       ; Number of FATs
-    mov [bdb_fat_count], al
-    mov ax, [buffer + 17]       ; Root directory entries
-    mov [bdb_dir_entries_count], ax
-    mov ax, [buffer + 24]       ; Sectors per FAT
-    mov [bdb_sectors_per_fat], ax
-    mov ax, [buffer + 26]       ; Sectors per track
-    mov [bdb_sectors_per_track], ax
-    mov ax, [buffer + 28]       ; Number of heads
-    mov [bdb_heads], ax
+    mov sp, 0xFFFF
 
     ; Print loading message
     mov si, msg_loading_kernel
@@ -60,6 +50,8 @@ start:
     ; Load kernel
     call load_kernel
 
+    jmp $
+
     ; Switch to protected mode
     call switch_to_pm
 
@@ -67,31 +59,47 @@ start:
     jmp $
 
 load_kernel:
-    ; Load root directory
-    mov ax, [bdb_reserved_sectors]
-    add ax, [bdb_sectors_per_fat]
-    add ax, [bdb_sectors_per_fat]  ; AX = LBA of root directory
-    mov cx, [bdb_dir_entries_count]
-    shr cx, 4  ; CX = Number of sectors to read (each sector holds 16 entries)
+    ; compute LBA of root directory = reserved + fats * sectors_per_fat
+    mov ax, [bdb_sectors_per_fat]
+    mov bl, [bdb_fat_count]
+    xor bh, bh
+    mul bx                              ; ax = (fats * sectors_per_fat)
+    add ax, [bdb_reserved_sectors]      ; ax = LBA of root directory
+    push ax
 
-    mov bx, buffer
+    ; compute size of root directory = (32 * number_of_entries) / bytes_per_sector
+    mov ax, [bdb_dir_entries_count]
+    shl ax, 5                           ; ax *= 32
+    xor dx, dx                          ; dx = 0
+    div word [bdb_bytes_per_sector]     ; number of sectors we need to read
+
+    test dx, dx                         ; if dx != 0, add 1
+    jz .root_dir_after
+    inc ax                              ; division remainder != 0, add 1
+                                        ; this means we have a sector only partially filled with entries
+.root_dir_after:
+    ; read root directory
+    mov cl, al                          ; cl = number of sectors to read = size of root directory
+    pop ax                              ; ax = LBA of root directory
+    mov dl, [ebr_drive_number]          ; dl = drive number (we saved it previously)
+    mov bx, buffer                      ; es:bx = buffer
     call disk_read
 
     ; Find kernel.bin
+    xor bx, bx
     mov di, buffer
-    mov cx, [bdb_dir_entries_count]
 
 .find_kernel:
-    push cx
-    mov cx, 11
     mov si, file_kernel_bin
+    mov cx, 11                          ; compare 11 bytes (characters)
     push di
     repe cmpsb
     pop di
     je .found_kernel
-    pop cx
     add di, 32
-    loop .find_kernel
+    inc bx
+    cmp bx, [bdb_dir_entries_count]
+    jl .find_kernel
 
     ; Kernel not found
     mov si, msg_kernel_not_found
@@ -99,95 +107,80 @@ load_kernel:
     jmp $
 
 .found_kernel:
-    ; Load kernel.bin
-    mov ax, [di + 26]  ; First cluster
+    push si
+    mov si, msg_kernel_was_found
+    call puts
+    pop si
+
+    ; di should have the address to the entry
+    mov ax, [di + 26]                   ; First logical cluster field (offset 26)
     mov [kernel_cluster], ax
 
     ; Load FAT
     mov ax, [bdb_reserved_sectors]
     mov bx, buffer
-    mov cx, [bdb_sectors_per_fat]
+    mov cl, [bdb_sectors_per_fat]
+    mov dl, [ebr_drive_number]
     call disk_read
 
-    ; Load kernel
-    mov ax, KERNEL_LOAD_SEGMENT
-    mov es, ax
+    ; Read kernel and process FAT chain
+    mov bx, KERNEL_LOAD_SEGMENT
+    mov es, bx
     mov bx, KERNEL_LOAD_OFFSET
 
 .load_kernel_loop:
     ; Read next cluster
     mov ax, [kernel_cluster]
-    add ax, 31  ; Convert cluster number to LBA
+    add ax, 31                          ; first cluster = (kernel_cluster - 2) * sectors_per_cluster + start_sector
+                                        ; start sector = reserved + fats + root directory size
     mov cl, 1
+    mov dl, [ebr_drive_number]
     call disk_read
 
-    add bx, 512
-    jc .next_segment
+    push bx
+    mov cx, [bdb_bytes_per_sector]
+    mov si, bx
+    call hex_dump
+    pop bx
 
-    jmp .find_next_cluster
+    add bx, [bdb_bytes_per_sector]
 
-.next_segment:
-    push ax
-    mov ax, es
-    add ax, 0x1000
-    mov es, ax
-    pop ax
-    xor bx, bx
-
-.find_next_cluster:
-    ; Find next cluster in FAT
+    ; Compute location of next cluster
     mov ax, [kernel_cluster]
     mov cx, 3
     mul cx
     mov cx, 2
-    div cx  ; AX = index of entry in FAT, DX = cluster mod 2
+    div cx                              ; ax = index of entry in FAT, dx = cluster mod 2
 
     mov si, buffer
     add si, ax
-    mov ax, [si]
+    mov ax, [ds:si]                     ; read entry from FAT table at index ax
 
     or dx, dx
     jz .even
+
 .odd:
     shr ax, 4
     jmp .next_cluster_after
+
 .even:
     and ax, 0x0FFF
 
 .next_cluster_after:
-    cmp ax, 0x0FF8  ; End of chain?
-    jae .kernel_loaded
+    cmp ax, 0x0FF8                      ; end of chain
+    jae .read_finish
 
     mov [kernel_cluster], ax
     jmp .load_kernel_loop
 
-.kernel_loaded:
+.read_finish:
+    push si
+    mov si, msg_loaded_kernel
+    call puts
+    pop si
+
     ret
 
-switch_to_pm:
-    cli
-    lgdt [gdt_descriptor]
-    mov eax, cr0
-    or eax, 0x1
-    mov cr0, eax
-    jmp CODE_SEG:init_pm
-
-bits 32
-init_pm:
-    mov ax, DATA_SEG
-    mov ds, ax
-    mov ss, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
-
-    mov ebp, 0x90000
-    mov esp, ebp
-
-    ; Jump to kernel
-    jmp KERNEL_LOAD_SEGMENT:KERNEL_LOAD_OFFSET
-
-bits 16
 ;
 ; Prints a string to the screen
 ; Params:
@@ -219,13 +212,6 @@ puts:
 ;
 ; Disk routines
 ;
-
-; Disk error function
-disk_error:
-    mov si, msg_disk_error
-    call puts
-    cli                 ; Clear interrupts
-    hlt                 ; Halt the system
 
 ;
 ; Converts an LBA address to a CHS address
@@ -272,7 +258,6 @@ lba_to_chs:
 ;   - es:bx: memory address where to store read data
 ;
 disk_read:
-
     push ax                             ; save registers we will modify
     push bx
     push cx
@@ -290,6 +275,7 @@ disk_read:
     pusha                               ; save all registers, we don't know what bios modifies
     stc                                 ; set carry flag, some BIOS'es don't set it
     int 13h                             ; carry flag cleared = success
+
     jnc .done                           ; jump if carry not set
 
     ; read failed
@@ -323,28 +309,109 @@ disk_read:
 disk_reset:
     pusha
     mov ah, 0
-    stc
     int 13h
     jc disk_error
     popa
     ret
 
-; GDT
+disk_error:
+    mov si, msg_read_failed
+    call puts
+    jmp $
+
+;
+; Dumps memory in hex format
+;
+hex_dump:
+    push ax
+    push bx
+    push dx
+
+.loop:
+    lodsb
+    mov ah, al
+    shr al, 4
+    call .print_hex_digit
+    mov al, ah
+    and al, 0x0F
+    call .print_hex_digit
+    mov al, ' '
+    call .print_char
+    loop .loop
+
+    mov al, CR
+    call .print_char
+    mov al, LF
+    call .print_char
+
+    pop dx
+    pop bx
+    pop ax
+    ret
+
+.print_hex_digit:
+    cmp al, 10
+    jl .print_number
+    add al, 'A' - 10
+    jmp .print_char
+
+.print_number:
+    add al, '0'
+
+.print_char:
+    mov ah, 0x0E
+    mov bh, 0
+    int 0x10
+    ret
+
+; GDT ----------------------------------------------------------------
+
+switch_to_pm:
+    cli
+    lgdt [gdt_descriptor]
+    mov eax, cr0
+    or al, 1
+    mov cr0, eax
+
+    jmp CODE_SEG:init_pm
+
+bits 32
+init_pm:
+    mov ax, DATA_SEG
+    mov ds, ax
+    mov ss, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+
+    mov ebp, 0x90000
+    mov esp, ebp
+
+    in al, 0x92
+    or al, 2
+    out 0x92, al
+
+    ; Jump to kernel
+    call KERNEL_LOAD_SEGMENT:KERNEL_LOAD_OFFSET
+
+    jmp $
+
 gdt_start:
-    dq 0x0
+    dd 0x00000000
+    dd 0x00000000
 gdt_code:
-    dw 0xFFFF
-    dw 0x0
-    db 0x0
-    db 10011010b
-    db 11001111b
-    db 0x0
+    dw 0xffff
+    dw 0x0000
+    db 0x00
+    db 10011010b    ; Access byte
+    db 11001111b    ; Flags
+    db 0x00
 gdt_data:
-    dw 0xFFFF
-    dw 0x0
+    dw 0xffff
+    dw 0x0000
     db 0x0
-    db 10010010b
-    db 11001111b
+    db 10010010b    ; Access byte
+    db 11001111b    ; Flags
     db 0x0
 gdt_end:
 
@@ -356,22 +423,28 @@ CODE_SEG equ gdt_code - gdt_start
 DATA_SEG equ gdt_data - gdt_start
 
 ; Variables
-boot_drive:              db 0
-kernel_cluster:          dw 0
-msg_loaded_boot2:      db '[BOOT S2] Loaded BOOT2.BIN', 13, 10, 0
+msg_test:                db '[BOOT S2] DEBUG - GOT THIS FAR', 13, 10, 0
+msg_loaded_boot2:        db '[BOOT S2] Loaded BOOT2.BIN', 13, 10, 0
 msg_loading_kernel:      db '[BOOT S2] Loading kernel...', 13, 10, 0
+msg_loaded_kernel:       db '[BOOT S2] Loaded KERNEL.BIN into memory', 13, 10, 0
+msg_read_failed:         db "[BOOT S2] Disk Read Error", ENDL, 0
+msg_kernel_was_found:    db '[BOOT S2] KERNEL.BIN was found!', 13, 10, 0
 msg_kernel_not_found:    db '[BOOT S2] KERNEL.BIN not found!', 13, 10, 0
 file_kernel_bin:         db 'KERNEL  BIN'
 msg_disk_error:          db '[BOOT S2] Disk read error!', ENDL, 0
 
-; Dynamically read BPB variables
-bdb_bytes_per_sector:    dw 0
-bdb_sectors_per_cluster: dw 0
-bdb_reserved_sectors:    dw 0
-bdb_fat_count:           db 0
-bdb_dir_entries_count:   dw 0
-bdb_sectors_per_fat:     dw 0
-bdb_sectors_per_track:   dw 0
-bdb_heads:               dw 0
+; BPB variables
+kernel_cluster:          dw 0
+bdb_bytes_per_sector:    dw 512
+bdb_reserved_sectors:    dw 1
+bdb_fat_count:           db 2
+bdb_dir_entries_count:   dw 0E0h
+bdb_sectors_per_fat:     dw 9
+bdb_sectors_per_track:   dw 18
+bdb_heads:               dw 2
 
-buffer:
+ebr_drive_number:           db 0x00                 ; 0x00 floppy, 0x80 hdd
+                            db 0                    ; reserved
+
+buffer:                  times 512 db 0
+root_dir_buffer:         times 512 db 0

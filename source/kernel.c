@@ -14,14 +14,14 @@ void kernel_main(void) {
     clear();
 	print_splash();
 
-    init_memory();
-    init_idt();
-    init_pit();
-    init_disk();
-    init_filesystem();    // Currently non-functional
-	init_keyboard();
+    //init_memory();
+    //init_idt();
+    //init_pit();
+    //init_disk();
+    //init_filesystem();    // Currently non-functional
+	//init_keyboard();
 
-    enable_interrupts();
+    //enable_interrupts();
 
     println("[KERNEL] Kernel initialisation complete\n");
     while(1) {

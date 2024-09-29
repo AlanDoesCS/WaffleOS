@@ -170,14 +170,11 @@ start:
     jmp .load_stage2_loop
 
 .read_finish:
-    mov si, msg_loading_stage2
-    call puts
-
     ; jump to stage 2
-    mov dl, [ebr_drive_number]          ; boot device in dl
     mov ax, STAGE2_LOAD_SEGMENT
     mov ds, ax
     mov es, ax
+    mov dl, [ebr_drive_number]
 
     jmp STAGE2_LOAD_SEGMENT:STAGE2_LOAD_OFFSET
 
