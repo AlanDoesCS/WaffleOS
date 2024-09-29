@@ -1,7 +1,14 @@
 # WaffleOS
-An open source operating system written in NASM and C, with the goal of demystifying how operating systems work.
+A Unix-like open source operating system written in NASM and C, with the goal of demystifying how operating systems work.
 
 <img src="https://github.com/user-attachments/assets/0553e678-e8b8-4853-ad1e-6e97e162c5fd" alt="drawing" width="512"/>
+
+![Hack Club arcade 2024 finalist](https://img.shields.io/badge/Hack%20Club%20arcade%202024-showcase%20finalist-gold?logo=https%3A%2F%2Fassets.hackclub.com%2Ficon-rounded.png&logoSize=auto&labelColor=orange)
+![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/AlanDoesCS/WaffleOS)
+![GitHub commit activity](https://img.shields.io/github/commit-activity/t/AlanDoesCS/WaffleOS)
+![GitHub contributors](https://img.shields.io/github/contributors/AlanDoesCS/WaffleOS)
+![GitHub Repo stars](https://img.shields.io/github/stars/AlanDoesCS/WaffleOS)
+![GitHub forks](https://img.shields.io/github/forks/AlanDoesCS/WaffleOS)
 
 ---
 # Table of contents
@@ -11,10 +18,22 @@ An open source operating system written in NASM and C, with the goal of demystif
 
 ---
 ## Features
-*WaffleOS is currently very early stages, so it may be prone to errors*
+- Bootloader
+    - Boots into 32 bit protected mode, and loads the C kernel
+- Disk driver
+    - A simple ATA PIO mode disk read/write driver
+- CLI
+    - VGA text mode to display information
+- FAT12 Support (WIP)
+- Interrupt descriptor table
+- Memory management
+    - allows memory management with malloc(), calloc() and free()
+- Programmable Interval Timer
+    - allow precise time delays
 
 ---
 ## Installation
+*WaffleOS is currently very early stages, so it may be prone to errors*
 
 ### (For users) Virtual Machine (QEMU)
 *This guide requires you to be on a Linux based system, if on Windows, then it is recommended to install the "Windows Subsystem for Linux" (WSL)*

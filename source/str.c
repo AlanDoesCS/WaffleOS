@@ -3,7 +3,9 @@
 //
 
 #include "str.h"
+#include "memory.h"
 #include "types.h"
+#include "datastructures.h"
 
 const char* hex_chars = "0123456789ABCDEF";
 
@@ -61,6 +63,13 @@ char* strcpy(char* dest, const char* src) {
     *dest = '\0';
 
     return original_dest;
+}
+
+char* split(char* src, char delimiter) {
+  char* ptr = src;
+  int count = 0;
+
+  SinglyLinkedList* list = SinglyLinkedList_Create(sizeof(char*));
 }
 
 int int_to_hex_str(uint32_t value, char* buffer) {
