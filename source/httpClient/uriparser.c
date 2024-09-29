@@ -1,5 +1,7 @@
 //
-// Created by Alan on 26/09/2024.
+// https://datatracker.ietf.org/doc/html/rfc3986
+// RFC 3986 compliant URI parser
 //
 
 #include "uriparser.h"
+

@@ -1,5 +1,6 @@
 //
-// Created by Alan on 26/09/2024.
+// https://datatracker.ietf.org/doc/html/rfc3986
+// RFC 3986 compliant URI parser
 //
 
 #ifndef URIPARSER_H
@@ -9,18 +10,21 @@
 #include "str.h"
 
 #define MAX_SCHEME_LENGTH 32
-#define MAX_HOST_LENGTH 255
+#define MAX_USERINFO_LENGTH 256
+#define MAX_HOST_LENGTH 256
+#define MAX_PORT_LENGTH 6
 #define MAX_PATH_LENGTH 2048
 #define MAX_QUERY_LENGTH 2048
-#define MAX_FRAGMENT_LENGTH 512
+#define MAX_FRAGMENT_LENGTH 256
 
 typedef struct {
-    char SCHEME[MAX_SCHEME_LENGTH];
-    char HOST[MAX_HOST_LENGTH];
-    uint16_t PORT;
-    char PATH[MAX_PATH_LENGTH];
-    char QUERY[MAX_QUERY_LENGTH];
-    char FRAGMENT[MAX_FRAGMENT_LENGTH];
+    char Scheme[MAX_SCHEME_LENGTH];
+    char UserInfo[MAX_USERINFO_LENGTH];
+    char Host[MAX_HOST_LENGTH];
+    char Port[MAX_PORT_LENGTH];
+    char Path[MAX_PATH_LENGTH];
+    char Query[MAX_QUERY_LENGTH];
+    char Fragment[MAX_FRAGMENT_LENGTH];
 } URI;
 
 void uri_init(URI* uri);
