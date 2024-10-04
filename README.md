@@ -30,6 +30,8 @@ A Unix-like open source operating system written in NASM and C, with the goal of
     - allows memory management with malloc(), calloc() and free()
 - Programmable Interval Timer
     - allow precise time delays
+- HTTP client (WIP)
+    - RFC 3986 compliant URI parsing
 
 ---
 ## Installation
