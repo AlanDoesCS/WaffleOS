@@ -93,3 +93,18 @@ A Unix-like open source operating system written in NASM and C, with the goal of
 - `waffle`
     - Prints "WaffleOS" to the screen, along with a waffle in ascii
 ---
+
+## WIP
+These features have NOT YET BEEN IMPLEMENTED (hence WIP)
+
+### WIP Commands
+- Filesystem:
+    - `ls`
+    - `cd`
+    - `mkdir`
+    - `mv`
+    - `touch`
+    - `rm`
+    - `cat`
+- Miscellaneous:
+    - `webster`
