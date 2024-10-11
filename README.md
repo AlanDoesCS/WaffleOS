@@ -108,3 +108,5 @@ These features have NOT YET BEEN IMPLEMENTED (hence WIP)
     - `cat`
 - Miscellaneous:
     - `webster`
+- Graphics
+    - `graphics -enable/disable` (enables or disables vesa graphics)
