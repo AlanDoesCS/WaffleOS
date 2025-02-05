@@ -4,7 +4,7 @@
 //
 
 #include "idt.h"
-#include "display.h"
+#include "../drivers/display.h"
 #include "kernel.h"
 
 #define IDT_SIZE 256

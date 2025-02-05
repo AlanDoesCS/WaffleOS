@@ -4,9 +4,9 @@
 
 #include "keyboard.h"
 #include "display.h"
-#include "idt.h"
-#include "kernel.h"
-#include "types.h"
+#include "../core/idt.h"
+#include "../core/kernel.h"
+#include "../types.h"
 
 // Helper functions for reading/writing from I/O
 extern unsigned char inb(unsigned short port);

@@ -6,8 +6,8 @@
 #ifndef FILESYSTEM_H
 #define FILESYSTEM_H
 
-#include "types.h"
-#include "disk.h"
+#include "../types.h"
+#include "../drivers/disk.h"
 
 #define MAX_PATH_LENGTH 256
 

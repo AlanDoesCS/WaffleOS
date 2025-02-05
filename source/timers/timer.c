@@ -3,10 +3,10 @@
 // Based on: https://wiki.osdev.org/Programmable_Interval_Timer
 //
 
-#include "types.h"
-#include "timer.h"
-#include "display.h"
-#include "idt.h"
+#include "../types.h"
+#include "../timers/timer.h"
+#include "../drivers/display.h"
+#include "../core/idt.h"
 
 #define PIT_FREQUENCY 1193182
 #define TARGET_FREQUENCY 100     // Hz

@@ -5,7 +5,7 @@
 #ifndef DISK_H
 #define DISK_H
 
-#include "types.h"
+#include "../types.h"
 
 #define SECTOR_SIZE 512
 

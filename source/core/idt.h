@@ -6,7 +6,7 @@
 #ifndef IDT_H
 #define IDT_H
 
-#include "types.h"
+#include "../types.h"
 
 struct InterruptDescriptor32 {
     uint16_t offset_lowerbits;   // offset bits 0..15

@@ -1,6 +1,6 @@
 #include "datastructures.h"
-#include "types.h"
-#include "memory.h"
+#include "../types.h"
+#include "../core/memory.h"
 
 SinglyLinkedListNode* SinglyLinkedListNode_Create(size_t size) {
     SinglyLinkedListNode* node = (SinglyLinkedListNode*) malloc(sizeof(SinglyLinkedListNode) + size);

@@ -1,11 +1,11 @@
-#include "display.h"
+#include "../drivers/display.h"
 #include "idt.h"
-#include "keyboard.h"
-#include "str.h"
-#include "filesystem.h"
+#include "../drivers/keyboard.h"
+#include "../libs/str.h"
+#include "../filesystems/filesystem.h"
 #include "kernel.h"
-#include "disk.h"
-#include "timer.h"
+#include "../drivers/disk.h"
+#include "../timers/timer.h"
 #include "memory.h"
 
 void kernel_main(void) __attribute__((section(".text.kernel_entry")));

@@ -1,7 +1,7 @@
 #ifndef DATASTRUCTURES_H
 #define DATASTRUCTURES_H
 
-#include "types.h"
+#include "../types.h"
 
 typedef struct SinglyLinkedListNode {
     struct SinglyLinkedListNode *next;

@@ -3,8 +3,8 @@
 // Based on: https://wiki.osdev.org/Printing_To_Screen
 //
 
-#include "types.h"
-#include "str.h"
+#include "../types.h"
+#include "../libs/str.h"
 
 #define VIDEO_MEMORY 0xb8000
 

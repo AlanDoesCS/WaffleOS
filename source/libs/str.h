@@ -5,7 +5,7 @@
 #ifndef STR_H
 #define STR_H
 
-#include "types.h"
+#include "../types.h"
 
 int strlen(const char* string);
 int isalnum(int c);

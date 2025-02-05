@@ -5,7 +5,7 @@
 #ifndef DISPLAY_H
 #define DISPLAY_H
 
-#include "types.h"
+#include "../types.h"
 
 int get_cursor_col();
 int get_cursor_row();

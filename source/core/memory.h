@@ -5,7 +5,7 @@
 #ifndef MEMORY_H
 #define MEMORY_H
 
-#include "types.h"
+#include "../types.h"
 
 #define MEMORY_SIZE 0x100000    // 1MB
 #define BLOCK_SIZE 16

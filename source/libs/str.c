@@ -3,8 +3,8 @@
 //
 
 #include "str.h"
-#include "memory.h"
-#include "types.h"
+#include "../core/memory.h"
+#include "../types.h"
 #include "datastructures.h"
 
 const char* hex_chars = "0123456789ABCDEF";

@@ -5,13 +5,12 @@
 // and: https://uefi.org/specs/UEFI/2.10/05_GUID_Partition_Table_Format.html
 
 #include "filesystem.h"
-#include "disk.h"
-#include "display.h"
-#include "str.h"
-#include "types.h"
-#include "memory.h"
-
-#include "timer.h"
+#include "../drivers/disk.h"
+#include "../drivers/display.h"
+#include "../libs/str.h"
+#include "../types.h"
+#include "../core/memory.h"
+#include "../timers/timer.h"
 
 #define GPT_PROTECTIVE_MBR 0xEE
 #define UEFI_SYSTEM_PARTITION 0xEF

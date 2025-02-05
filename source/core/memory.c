@@ -10,8 +10,8 @@ malloc(), calloc() and free() were based on a simplified implementation of a com
 */
 
 #include "memory.h"
-#include "types.h"
-#include "display.h"
+#include "../types.h"
+#include "../drivers/display.h"
 
 #define wsize sizeof(uint32_t)
 #define wmask (wsize - 1)

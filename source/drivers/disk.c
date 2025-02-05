@@ -5,9 +5,9 @@
 
 #include "disk.h"
 #include "display.h"
-#include "types.h"
-#include "timer.h"
-#include "str.h"
+#include "../types.h"
+#include "../timers/timer.h"
+#include "../libs/str.h"
 
 #define ATA_PRIMARY_DATA_PORT 0x1F0
 #define ATA_PRIMARY_ERROR_PORT 0x1F1
