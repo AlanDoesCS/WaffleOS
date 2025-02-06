@@ -111,3 +111,28 @@ These features have NOT YET BEEN IMPLEMENTED (hence WIP)
     - `webster`
 - Graphics
     - `graphics -enable/disable` (enables or disables vesa graphics)
+
+### BOCHS
+
+For linux mint:
+```shell
+./configure --enable-smp \
+              --enable-cpu-level=6 \
+              --enable-all-optimizations \
+              --enable-x86-64 \
+              --enable-pci \
+              --enable-vmx \
+              --enable-debugger \
+              --enable-disasm \
+              --enable-debugger-gui \
+              --enable-logging \
+              --enable-fpu \
+              --enable-3dnow \
+              --enable-sb16=dummy \
+              --enable-cdrom \
+              --enable-x86-debugger \
+              --enable-iodebug \
+              --disable-plugins \
+              --disable-docbook \
+              --with-term --with-sdl2
+```

@@ -46,13 +46,17 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.asm | $(BUILD_SUBDIRS)
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_SUBDIRS)
 	$(CC) $(CFLAGS) -c $< -o $@
 
+# Rule for BIN_DIR
+$(BIN_DIR):
+	mkdir -p $@
+
 # Link the kernel
 $(KERNEL_BIN): $(OBJECTS) | $(BUILD_SUBDIRS)
 	$(LD) -o $@ $(OBJECTS)
 
 # Create an empty OS image (4MB)
 $(OS_IMAGE): $(BOOT_BIN) $(KERNEL_BIN) | $(BIN_DIR)
-	dd if=/dev/zero of=$@ bs=1M count=4
+	dd if=/dev/zero of=$@ bs=512 count=2880
 	mkfs.vfat -F 12 $@
 	sudo mkdir -p $(MNT_DIR)
 	sudo mount $@ $(MNT_DIR)
@@ -64,6 +68,10 @@ $(OS_IMAGE): $(BOOT_BIN) $(KERNEL_BIN) | $(BIN_DIR)
 run: $(OS_IMAGE)
 	qemu-system-i386 -drive format=raw,file=$(OS_IMAGE),index=0,if=floppy -d int,cpu_reset -D $(BUILD_DIR)/qemu.log
 
+# Run with Bochs for better debugging
+bochs: $(OS_IMAGE)
+	bochs -f .bochsrc -q
+
 # Debug with GDB
 debug: $(OS_IMAGE)
 	qemu-system-i386 -drive format=raw,file=$(OS_IMAGE),index=0,if=floppy -s -S &
@@ -71,5 +79,4 @@ debug: $(OS_IMAGE)
 
 # Clean build artifacts (recursively remove all .o files)
 clean:
-	find $(SRC_DIR) -type f -name "*.o" -delete
-	rm -rf $(BUILD_DIR)/*.o $(BIN_DIR)/*
+	rm -rf $(BUILD_DIR)
