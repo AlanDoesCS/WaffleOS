@@ -258,8 +258,7 @@ switch_to_pm:
     mov cr0, eax
     jmp CODE_SEG:init_pm
 
-; --------------------------------------------------------------------
-; 32-bit Protected-mode entry (from your original bootloader)
+; 32-bit Protected-mode entry
 [BITS 32]
 init_pm:
     mov ax, DATA_SEG
@@ -273,8 +272,7 @@ init_pm:
     call KERNEL_LOAD_SEGMENT:KERNEL_LOAD_OFFSET
     jmp $
 
-; --------------------------------------------------------------------
-; GDT (from your original bootloader)
+; GDT
 [BITS 16]
 gdt_start:
     dd 0x0
