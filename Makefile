@@ -2,7 +2,7 @@
 CC = i386-elf-gcc
 AS = nasm
 LD = i386-elf-ld
-CFLAGS = -ffreestanding -nostdlib -m32 -g -Wall -Wextra
+CFLAGS = -ffreestanding -nostdlib -m32 # -g -Wall -Wextra
 LDFLAGS = -T linker.ld --oformat binary
 
 # Directories
@@ -27,6 +27,9 @@ BOOT1_BIN = $(BIN_DIR)/boot.bin
 # Stage 2: boot2.asm (loaded as BOOT2.BIN from FAT12 filesystem)
 BOOT2_ASM = $(SRC_DIR)/boot/boot2.asm
 BOOT2_BIN = $(BIN_DIR)/boot2.bin
+# Boot config: WFOSCFIG.asm (loaded as WFOSCFIG.BIN from filesystem)
+BOOT_CFIG_ASM = $(SRC_DIR)/boot/WFOSCFIG.asm
+BOOT_CFIG_BIN = $(BIN_DIR)/WFOSCFIG.bin
 
 # Output
 OS_IMAGE = $(BIN_DIR)/os-image.bin
@@ -50,6 +53,10 @@ $(BOOT1_BIN): $(BOOT1_ASM) | $(BIN_DIR)
 $(BOOT2_BIN): $(BOOT2_ASM) | $(BIN_DIR)
 	$(AS) -f bin $< -o $@
 
+# Assemble Boot config (raw binary)
+$(BOOT_CFIG_BIN): $(BOOT_CFIG_ASM) | $(BIN_DIR)
+	$(AS) -f bin $< -o $@
+
 # Assemble other assembly files into .o
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.asm | $(BUILD_SUBDIRS)
 	$(AS) -f elf32 $< -o $@
@@ -63,13 +70,14 @@ $(KERNEL_BIN): $(OBJECTS) | $(BUILD_SUBDIRS)
 	$(LD) -o $@ $(OBJECTS)
 
 # Create a FAT12 OS image (1.44MB)
-$(OS_IMAGE): $(BOOT1_BIN) $(BOOT2_BIN) $(KERNEL_BIN) | $(BIN_DIR)
+$(OS_IMAGE): $(BOOT1_BIN) $(BOOT2_BIN) $(BOOT_CFIG_BIN) $(KERNEL_BIN) | $(BIN_DIR)
 	# Create a blank 1.44MB image
 	dd if=/dev/zero of=$(OS_IMAGE) bs=512 count=2880
 	mkfs.fat -F 12 -n "WAFFLE   OS" $(OS_IMAGE)
 	dd if=$(BOOT1_BIN) of=$(OS_IMAGE) conv=notrunc
 	# Copy files into the FAT12 filesystem using mtools
 	mcopy -i $(OS_IMAGE) $(BOOT2_BIN) "::BOOT2.BIN"
+	# mcopy -i $(OS_IMAGE) $(BOOT_CFIG_BIN) "::WFOSCFIG.BIN"
 	mcopy -i $(OS_IMAGE) $(KERNEL_BIN) "::KERNEL.BIN"
 
 lsimgmount:

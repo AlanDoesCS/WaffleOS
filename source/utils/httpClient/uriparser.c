@@ -1,11 +1,10 @@
 //
 // https://datatracker.ietf.org/doc/html/rfc3986
-// RFC 3986 compliant URI parser
 //
 
 #include "uriparser.h"
 #include "../memory.h"
-#include "../str.h"
+#include "../../libs/str.h"
 
 void uri_init(URI* uri) {
     if (uri) {

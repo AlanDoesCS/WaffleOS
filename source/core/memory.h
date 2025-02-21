@@ -1,7 +1,3 @@
-//
-// Created by Alan on 18/07/2024.
-//
-
 #ifndef MEMORY_H
 #define MEMORY_H
 

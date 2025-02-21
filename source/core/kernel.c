@@ -15,11 +15,11 @@ void kernel_main(void) {
 	print_splash();
 
     init_memory();
-    init_idt();
-    init_pit();
-    init_disk();
-    init_filesystem();    // Currently non-functional
-	init_keyboard();
+    //init_idt();
+    //init_pit();
+    //init_disk();
+    //init_filesystem();    // Currently non-functional
+	//init_keyboard();
 
     enable_interrupts();
 
@@ -46,7 +46,7 @@ void execute_command(char* command) {
         return;
     } else if (strcmp(command, "shutdown") == 0) { // TODO: Implement shutdown
         println("Shutting down...");
-    } else if (strcmp(command, "systime") == 0) { // TODO: Implement shutdown
+    } else if (strcmp(command, "systime") == 0) {
         print("Time since startup: ");
         print_systime();
         print_char('\n');

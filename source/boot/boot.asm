@@ -1,6 +1,8 @@
 [ORG 0x7C00]
 [BITS 16]
 
+; NOTE: This file was derived from the work of Nanobyte (https://github.com/nanobyte-dev/nanobyte_os/blob/videos/part3/src/bootloader/boot.asm)
+
 %define ENDL 0x0D, 0x0A
 
 jmp short start
@@ -30,7 +32,9 @@ ebr_system_id:              db 'FAT12   '           ; 8 bytes
 
 start:
     cld
-    mov ax, 0
+
+    ; setup data segments
+    mov ax, 0           ; can't set ds/es directly
     mov ds, ax
     mov es, ax
 
@@ -38,14 +42,15 @@ start:
     mov ss, ax
     mov sp, 0x7C00              ; stack grows downwards from where we are loaded in memory
 
-    ; ensure in expected location
+    ; some BIOSes might start us at 07C0:0000 instead of 0000:7C00, make sure we are in the
+    ; expected location
     push es
     push word .after
     retf
 
-
-; NOTE: this section is written by "nanobyte", the original author of the bootloader (Nanobyte) ------------------------
 .after:
+
+    ; read something from floppy disk
     ; BIOS should set DL to drive number
     mov [ebr_drive_number], dl
 
@@ -53,7 +58,8 @@ start:
     mov si, msg_loading
     call puts
 
-    ; read drive parameters via BIOS interrupt
+    ; read drive parameters (sectors per track and head count),
+    ; instead of relying on data on formatted disk
     push es
     mov ah, 08h
     int 13h
@@ -68,6 +74,7 @@ start:
     mov [bdb_heads], dh                 ; head count
 
     ; compute LBA of root directory = reserved + fats * sectors_per_fat
+    ; note: this section can be hardcoded
     mov ax, [bdb_sectors_per_fat]
     mov bl, [bdb_fat_count]
     xor bh, bh
@@ -94,7 +101,7 @@ start:
     mov bx, buffer                      ; es:bx = buffer
     call disk_read
 
-    ; search for kernel.bin
+    ; search for boot2.bin
     xor bx, bx
     mov di, buffer
 
@@ -112,10 +119,9 @@ start:
     jl .search_kernel
 
     ; kernel not found
-    jmp kernel_not_found_error
+    jmp stage2_not_found_error
 
 .found_kernel:
-
     ; di should have the address to the entry
     mov ax, [di + 26]                   ; first logical cluster field (offset 26)
     mov [stage2_cluster], ax
@@ -128,9 +134,9 @@ start:
     call disk_read
 
     ; read kernel and process FAT chain
-    mov bx, KERNEL_LOAD_SEGMENT
+    mov bx, S2_LOAD_SEGMENT
     mov es, bx
-    mov bx, KERNEL_LOAD_OFFSET
+    mov bx, S2_LOAD_OFFSET
 
 .load_kernel_loop:
 
@@ -179,11 +185,11 @@ start:
     ; jump to our kernel
     mov dl, [ebr_drive_number]          ; boot device in dl
 
-    mov ax, KERNEL_LOAD_SEGMENT         ; set segment registers
+    mov ax, S2_LOAD_SEGMENT         ; set segment registers
     mov ds, ax
     mov es, ax
 
-    jmp KERNEL_LOAD_SEGMENT:KERNEL_LOAD_OFFSET
+    jmp S2_LOAD_SEGMENT:S2_LOAD_OFFSET
 
     jmp wait_key_and_reboot             ; should never happen
 
@@ -200,7 +206,7 @@ floppy_error:
     call puts
     jmp wait_key_and_reboot
 
-kernel_not_found_error:
+stage2_not_found_error:
     mov si, msg_stage2_not_found
     call puts
     jmp wait_key_and_reboot
@@ -349,17 +355,14 @@ disk_reset:
     popa
     ret
 
-; NOTE: END OF SECTION BY Nanobyte (Nanobyte) ------------------------
-
-msg_loading:            db 'Loading...', ENDL, 0
-msg_read_failed:        db 'Read from disk failed!', ENDL, 0
-msg_stage2_not_found:   db 'BOOT2.BIN file not found!', ENDL, 0
+msg_loading:            db 'Loading', ENDL, 0
+msg_read_failed:        db 'Read from disk failed', ENDL, 0
+msg_stage2_not_found:   db 'BOOT2 not found', ENDL, 0
 file_stage2_bin:        db 'BOOT2   BIN'
 stage2_cluster:         dw 0
 
-KERNEL_LOAD_SEGMENT     equ 0x2000
-KERNEL_LOAD_OFFSET      equ 0
-
+S2_LOAD_SEGMENT     equ 0x2000
+S2_LOAD_OFFSET      equ 0x0000
 
 times 510-($-$$) db 0
 dw 0AA55h
