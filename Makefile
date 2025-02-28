@@ -1,7 +1,7 @@
 # PROJECT MAKEFILE
 include config.mk
 
-.PHONY: all floppy_image kernel bootloader clean bochs lsimgroot hexdumpsector always
+.PHONY: all floppy_image kernel bootloader clean bochs lsimgroot hexdumpsector printdirs always
 
 all: floppy_image
 
@@ -65,6 +65,9 @@ lsimgroot:
 
 hexdumpsector:
 	hexdump -C -n 512 $(BUILD_DIR)/main_floppy.img
+
+printdirs:
+	python3 tools/print_dirs.py
 
 #
 # Clean
