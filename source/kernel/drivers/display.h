@@ -2,9 +2,9 @@
 // Created by Alan on 11/07/2024.
 //
 
-#ifndef DISPLAY_H
-#define DISPLAY_H
+#pragma once
 
+#include "stdint.h"
 #include "../types.h"
 
 int get_cursor_col();
@@ -21,5 +21,3 @@ void print_uint16(uint16_t value);
 void print_uint32(uint32_t value);
 void print_hex(uint32_t value, int num_digits);
 void print_uint32_hex(uint32_t value);
-
-#endif //DISPLAY_H

@@ -357,12 +357,12 @@ disk_reset:
 
 msg_loading:            db 'Loading', ENDL, 0
 msg_read_failed:        db 'Read from disk failed', ENDL, 0
-msg_stage2_not_found:   db 'BOOT2 not found', ENDL, 0
-file_stage2_bin:        db 'BOOT2   BIN'
+msg_stage2_not_found:   db 'STAGE2.BIN not found', ENDL, 0
+file_stage2_bin:        db 'STAGE2  BIN'
 stage2_cluster:         dw 0
 
-S2_LOAD_SEGMENT     equ 0x2000
-S2_LOAD_OFFSET      equ 0x0000
+S2_LOAD_SEGMENT     equ 0x0
+S2_LOAD_OFFSET      equ 0x500
 
 times 510-($-$$) db 0
 dw 0AA55h

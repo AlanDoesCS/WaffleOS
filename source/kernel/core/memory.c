@@ -154,7 +154,7 @@ void* memcpy(void* dst0, const void* src0, size_t length) {
         return (dst0);
 }
 
-void* malloc(size_t size) {    // TODO: Implement malloc, calloc and free
+void* malloc(size_t size) {
     MemoryBlock *current, *previous;
     void* result;
 
@@ -204,7 +204,7 @@ void free(void *ptr) {
     merge_surrounding_free_blocks(block);
 }
 
-// for debug only! (incl, not incl)
+// for debug only! (inclusive, not inclusive)
 void memdump_array(uint8_t* address, int start, int end) {
     for (int i = start; i < end; i++) {
 
@@ -219,7 +219,7 @@ void memdump_array(uint8_t* address, int start, int end) {
     println("");
 }
 
-void init_memory(void) {
+void init_memory() {
     head = (MemoryBlock*)heap;
     head->Size = MEMORY_SIZE - sizeof(MemoryBlock);
     head->IsFree = TRUE;

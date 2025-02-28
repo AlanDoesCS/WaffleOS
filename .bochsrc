@@ -3,8 +3,8 @@ cpu: count=1, ips=1000000
 romimage: file=/usr/local/share/bochs/BIOS-bochs-latest
 vgaromimage: file=/usr/local/share/bochs/VGABIOS-lgpl-latest
 boot: floppy  # Boot from floppy
-floppya: 1_44=builds/bin/os-image.bin, status=inserted
+floppya: 1_44=builds/main_floppy.img, status=inserted
 log: builds/bochs.log
 mouse: enabled=0
-display_library: sdl2
+display_library: sdl2, options="gui_debug"
 keyboard: keymap=/usr/local/share/bochs/keymaps/sdl2-pc-de.map

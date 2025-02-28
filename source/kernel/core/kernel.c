@@ -1,16 +1,15 @@
+#include <stdint.h>
+#include "stdio.h"
+
 #include "../drivers/display.h"
-#include "idt.h"
-#include "../drivers/keyboard.h"
-#include "../libs/str.h"
-#include "../filesystems/filesystem.h"
 #include "kernel.h"
-#include "../drivers/disk.h"
-#include "../timers/timer.h"
-#include "memory.h"
 
-void kernel_main(void) __attribute__((section(".text.kernel_entry")));
+extern uint8_t __bss_start;
+extern uint8_t __bss_end;
 
-void kernel_main(void) {
+void __attribute__((section(".entry"))) start(uint16_t boot_drive) {
+    memset(&__bss_start, 0, (&__bss_end) - (&__bss_start));
+
     clear();
 	print_splash();
 
@@ -30,6 +29,9 @@ void kernel_main(void) {
 
         execute_command(input);
     }
+
+end: // should be unreachable
+    for (;;);
 }
 
 void execute_command(char* command) {
