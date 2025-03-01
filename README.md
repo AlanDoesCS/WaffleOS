@@ -45,7 +45,7 @@ A Unix-like open source operating system written in NASM and C, with the goal of
 1) `sudo apt update`
 2) `sudo apt install qemu-system-i386`
    - Download the latest OS image from the releases page, or from builds/bin/...
-3) `qemu-system-i386 -drive format=raw,file=PATH/TO/os-image.bin`
+3) `qemu-system-i386 -drive format=raw,file=PATH/TO/main_floppy.img`
 4) Enjoy your emulated WaffleOS experience! 🎉🎉
 
 ### (For developers) Virtual Machine (QEMU)
@@ -53,27 +53,7 @@ A Unix-like open source operating system written in NASM and C, with the goal of
 *To install the WSL, simply run the command:* `wsl --install` *and follow the on-screen prompts, before restarting your system.*
 
 1) First you will need to clone this repository before you can proceed with the installation
-2) Locate the installation script, "`setup-gcc-debian.sh`" and run `chmod +x setup-gcc-debian.sh` from the same directory in your terminal, before using `./setup-gcc-debian.sh`
-    - This will install QEMU, NASM, GCC and a bunch of other things needing for compiling the OS
-OR
-    - Follow this guide from OSDev: https://wiki.osdev.org/GCC_Cross-Compiler
-3) To verify your installation:
-    - You should see something like this after running the setup
-      ![Terminal output](https://github.com/AlanDoesCS/WaffleOS/assets/95879019/72d8dc06-bd04-4357-9046-aeb43f707513)
-    - Then run:
-   ```shell
-   qemu-system-i386 --version
-   nasm -v
-   gcc --version
-   ```
-4) Next, add the new directory ("/usr/local/i386elfgcc/bin") to the path variable:
-    - Run `vim ~/.bashrc`
-    - Add "`export PATH="$PATH:/usr/local/i386elfgcc/bin"`" to the end of the file
-    - Add "`export PATH="$PATH:/usr/local/i386elfld/bin"`" to the end of the file
-    - Save and exit (`:x`)
-5) Restart your system
-6) Locate `source/run.sh` and run `chmod +x run.sh` then `./run.sh`
-7) Enjoy your emulated WaffleOS experience! 🎉🎉
+2) https://wiki.osdev.org/GCC_Cross-Compiler
 
 ### x86 based device
 
@@ -95,6 +75,8 @@ OR
   - Prints "Hello, World!" to the screen
 - `waffle`
     - Prints "WaffleOS" to the screen, along with a waffle in ascii
+- `cowsay <arg>`
+  - Prints a cow which says the argument, or "WaffleOS!" if no argument is provided
 ---
 
 ## WIP
@@ -112,11 +94,11 @@ These features have NOT YET BEEN IMPLEMENTED (hence WIP)
 - Miscellaneous:
     - `webster`
 - Graphics
-    - `graphics -enable/disable` (enables or disables vesa graphics)
+    - `graphics -enable/disable` (enables or disables vbe graphics)
 
-### BOCHS
+# Bochs
 
-For linux mint:
+For linux mint, I recommend to use these configuration flags for bochs:
 ```shell
 ./configure --enable-smp \
               --enable-cpu-level=6 \
