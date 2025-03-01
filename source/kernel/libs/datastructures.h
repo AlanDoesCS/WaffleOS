@@ -1,7 +1,7 @@
-#ifndef DATASTRUCTURES_H
-#define DATASTRUCTURES_H
+#pragma once
 
-#include "../types.h"
+#include <stdint.h>
+#include <stddef.h>
 
 typedef struct SinglyLinkedListNode {
     struct SinglyLinkedListNode *next;
@@ -18,4 +18,3 @@ SinglyLinkedList* SinglyLinkedList_Create(size_t type_size);
 void SinglyLinkedList_Append(SinglyLinkedList* list, const void* data);
 void SinglyLinkedList_Free(SinglyLinkedList* list);
 
-#endif //DATASTRUCTURES_H

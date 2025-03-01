@@ -1,3 +1,4 @@
+; Stage 2 x86 helper functions
 ; source: https://github.com/nanobyte-dev/nanobyte_os/blob/videos/part7/src/bootloader/stage2/x86.asm
 %macro x86_EnterRealMode 0
     [bits 32]

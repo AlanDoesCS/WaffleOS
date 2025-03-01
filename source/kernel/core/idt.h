@@ -3,11 +3,9 @@
 // Based on: https://wiki.osdev.org/Interrupt_Descriptor_Table
 //
 
-#ifndef IDT_H
-#define IDT_H
+#pragma once
 
-#include "stdint.h"
-#include "../types.h"
+#include <stdint.h>
 
 struct InterruptDescriptor32 {
     uint16_t offset_lowerbits;   // offset bits 0..15
@@ -24,5 +22,3 @@ void init_idt(void);
 void init_pic(void);
 void enable_irq(uint8_t irq);
 void register_interrupt_handler(uint8_t interrupt_number, uint32_t handler_address);
-
-#endif //IDT_H

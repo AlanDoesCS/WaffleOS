@@ -1,22 +1,17 @@
 //
-// Created by Alan on 14/07/2024.
 // Based on: https://wiki.osdev.org/Programmable_Interval_Timer
 //
 
-#include "../types.h"
 #include "../timers/timer.h"
-#include "../drivers/display.h"
 #include "../core/idt.h"
+#include "../core/stdio.h"
+#include "../core/x86.h"
 
 #define PIT_FREQUENCY 1193182
 #define TARGET_FREQUENCY 100     // Hz
 #define PIT_COMMAND 0x36
 #define PIT_CHANNEL_0 0x40
 #define PIT_COMMAND_PORT 0x43
-
-// Helper functions for reading/writing from I/O
-extern unsigned char inb(unsigned short port);
-extern void outb(unsigned short port, unsigned char val);
 
 extern void irq0(void);
 
@@ -25,21 +20,19 @@ static volatile uint32_t milliseconds_low = 0;
 static volatile uint32_t milliseconds_high = 0;
 
 void init_pit() {
-    println("[PIT] Initializing Programmable Interval Timer...");
+    printf("[PIT] Initializing Programmable Interval Timer...\r\n");
 
     uint32_t divisor = PIT_FREQUENCY / TARGET_FREQUENCY;
 
-    outb(PIT_COMMAND_PORT, PIT_COMMAND);
-    outb(PIT_CHANNEL_0, (uint8_t)(divisor & 0xFF));
-    outb(PIT_CHANNEL_0, (uint8_t)((divisor >> 8) & 0xFF));
+    x86_outb(PIT_COMMAND_PORT, PIT_COMMAND);
+    x86_outb(PIT_CHANNEL_0, (uint8_t)(divisor & 0xFF));
+    x86_outb(PIT_CHANNEL_0, (uint8_t)((divisor >> 8) & 0xFF));
 
     register_interrupt_handler(32, (uint32_t)irq0); // IRQ0 is interrupt 32
 
     enable_irq(0); // Enable IRQ0
 
-    print("[PIT] Programmable Interval Timer initialized and running at ");
-    print_uint32(TARGET_FREQUENCY);
-    println("Hz");
+    printf("[PIT] Programmable Interval Timer initialized and running at %dHz\r\n", TARGET_FREQUENCY);
 }
 
 void timer_handler(void) {
@@ -114,8 +107,8 @@ void get_systime_millis(uint32_t* high, uint32_t* low) {
     enable_interrupts();
 }
 
-void print_systime(void) {    // print time since system start
+void print_systime(void) {    // print time since system startup
     char buffer[9];
     get_systime_string(buffer);
-    print(buffer);
+    printf("%s", buffer);
 }

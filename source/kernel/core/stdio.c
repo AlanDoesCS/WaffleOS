@@ -2,16 +2,29 @@
 
 #include "stdio.h"
 #include "x86.h"
+#include "../libs/string.h"
 
+#include <stddef.h>
 #include <stdarg.h>
 #include <stdbool.h>
 
+// Nanobyte's code starts here
 const unsigned SCREEN_WIDTH = 80;
 const unsigned SCREEN_HEIGHT = 25;
 const uint8_t DEFAULT_COLOR = 0x7;
 
 uint8_t* g_ScreenBuffer = (uint8_t*)0xB8000;
 int g_ScreenX = 0, g_ScreenY = 0;
+
+int get_g_screenx()
+{
+    return g_ScreenX;
+}
+
+int get_g_screeny()
+{
+    return g_ScreenY;
+}
 
 void putchr(int x, int y, char c)
 {
@@ -92,6 +105,14 @@ void putc(char c)
 
         case '\r':
             g_ScreenX = 0;
+            break;
+
+        case '\b':
+            if (g_ScreenX > 0)
+            {
+                g_ScreenX--;
+                putchr(g_ScreenX, g_ScreenY, ' ');
+            }
             break;
 
         default:
@@ -312,4 +333,63 @@ void print_buffer(const char* msg, const void* buffer, uint32_t count)
         putc(g_HexChars[u8Buffer[i] & 0xF]);
     }
     puts("\n");
+}
+
+// Nanobyte's code ends here
+
+int snprintf(char* str, size_t size, const char* format, ...) {
+    if (size == 0) return 0;
+
+    size_t written = 0;
+    size_t max_size = size - 1;  // Reserve space for null terminator
+    char* current = str;
+    const char* fmt = format;
+
+    va_list args;
+    va_start(args, format);
+
+    while (*fmt && written < max_size) {
+        if (*fmt != '%') {
+            *current++ = *fmt++;
+            written++;
+        } else {
+            fmt++;
+            switch (*fmt) {
+            case 's': {
+                    const char* s = va_arg(args, const char*);
+                    size_t len = strlen(s);
+                    if (written + len > max_size) {
+                        len = max_size - written;
+                    }
+                    memcpy(current, s, len);
+                    current += len;
+                    written += len;
+                    break;
+            }
+            case 'd': {
+                    int d = va_arg(args, int);
+                    char num_str[20];
+                    int num_len;
+                    int_to_str(d, num_str, &num_len);
+                    if (written + num_len > max_size) {
+                        num_len = max_size - written;
+                    }
+                    memcpy(current, num_str, num_len);
+                    current += num_len;
+                    written += num_len;
+                    break;
+            }
+            default:
+                *current++ = *fmt;
+                written++;
+                break;
+            }
+            fmt++;
+        }
+    }
+
+    *current = '\0';
+    va_end(args);
+
+    return (int)written;
 }

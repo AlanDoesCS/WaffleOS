@@ -6,8 +6,12 @@
 #ifndef URIPARSER_H
 #define URIPARSER_H
 
-#include "../types.h"
-#include "../str.h"
+#include <stdint.h>
+#include <stddef.h>
+
+#include "../../libs/string.h"
+#include "../../core/stdio.h"
+#include "../../core/memory.h"
 
 #define MAX_SCHEME_LENGTH 32
 #define MAX_USERINFO_LENGTH 256

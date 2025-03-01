@@ -1,237 +1,117 @@
-//
-// Created by Alan on 11/07/2024.
-// Based on: https://wiki.osdev.org/Printing_To_Screen
-//
+// Display driver
+#include "display.h"
+#include <stddef.h>
+#include <stdint.h>
 
-#include "../types.h"
-#include "../libs/str.h"
+#include "../libs/string.h"
+#include "../core/x86.h"
+#include "../core/memory.h"
+// #include "vbe_switch.h"
+#include "font8x16.h" // contains a basic 8x16 font in a 2D array
 
-#define VIDEO_MEMORY 0xb8000
+#define SCREEN_WIDTH   640
+#define SCREEN_HEIGHT  480
+#define BYTES_PER_PIXEL 4    // 4 for 32-bit color (each pixel is 4 bytes)
 
-// Color Table
-#define BLACK 0x0
-#define BLUE 0x1
-#define GREEN 0x2
-#define CYAN 0x3
-#define RED 0x4
-#define MAGENTA 0x5
-#define BROWN 0x6
-#define LIGHT_GRAY 0x7
-#define DARK_GRAY 0x8
-#define LIGHT_BLUE 0x9
-#define LIGHT_GREEN 0xa
-#define LIGHT_CYAN 0xb
-#define LIGHT_RED 0xc
-#define LIGHT_MAGENTA 0xd
-#define YELLOW 0xe
-#define WHITE 0xf
+static uint32_t vbe_framebuffer;  // will hold the LFB address
 
-#define WHITE_ON_BLACK 0x0f
-#define WHITE_ON_BLUE 0x1f
+// Global variables to hold the framebuffer pointer and pitch.
+static volatile uint8_t *framebuffer = (volatile uint8_t *)0;
+static uint32_t pitch = SCREEN_WIDTH * BYTES_PER_PIXEL;
 
-#define SCREEN_WIDTH 80
-#define SCREEN_HEIGHT 25
-
-#define TAB_SIZE 4
-
-// current color combination being used
-uint8_t COLOR = WHITE_ON_BLUE;
-
-// Helper functions for reading/writing from I/O
-extern unsigned char inb(unsigned short port);
-extern void outb(unsigned short port, unsigned char val);
-
-uint16_t current_row = 0;
-uint16_t current_col = 0;
-
-uint16_t get_cursor_col() {
-    return current_col;
+void enable_graphics() {
+    //vbe_framebuffer = set_vbe_mode_640x480x32();
+    //display_init(vbe_framebuffer, SCREEN_WIDTH * BYTES_PER_PIXEL);
 }
 
-uint16_t get_cursor_row() {
-    return current_row;
+void display_init(uint32_t framebuffer_addr, uint32_t pitch_val) {
+    framebuffer = (volatile uint8_t *)framebuffer_addr;
+    pitch = pitch_val;
 }
 
-void move_cursor(int row, int col) {
-    current_row = row;
-    current_col = col;
-
-    // Calculate the position in the VGA text mode buffer
-    int position = (row) * SCREEN_WIDTH + col;
-
-    outb(0x3D4, 0x0F);          // Low cursor control register index
-    outb(0x3D5, (unsigned char)(position & 0xFF)); // Low byte of position
-    outb(0x3D4, 0x0E);          // High cursor control register index
-    outb(0x3D5, (unsigned char)((position >> 8) & 0xFF)); // High byte of position
-}
-
-void clear() {
-    volatile char* video_memory = (volatile char*)VIDEO_MEMORY;
-    for (int i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT; i++) {
-        *video_memory++ = ' ';
-        *video_memory++ = COLOR;
-    }
-
-    // go back to start
-    move_cursor(0, 0);
-}
-
-void scroll_screen() {
-    volatile char* video_memory = (volatile char*)VIDEO_MEMORY;
-
-    // Move each line up by one
-    for (int i = 0; i < (SCREEN_HEIGHT - 1) * SCREEN_WIDTH; i++) {
-        video_memory[i * 2] = video_memory[(i + SCREEN_WIDTH) * 2];
-        video_memory[i * 2 + 1] = video_memory[(i + SCREEN_WIDTH) * 2 + 1];
-    }
-
-    // Clear the last line
-    for (int i = (SCREEN_HEIGHT - 1) * SCREEN_WIDTH; i < SCREEN_HEIGHT * SCREEN_WIDTH; i++) {
-        video_memory[i * 2] = ' ';
-        video_memory[i * 2 + 1] = COLOR;
+// Clear the screen to the specified color.
+void g_clrscr(uint32_t color) {
+    for (int y = 0; y < SCREEN_HEIGHT; y++) {
+        for (int x = 0; x < SCREEN_WIDTH; x++) {
+            putpixel(x, y, color);
+        }
     }
 }
 
-void print_char_xy(unsigned char c, int col, int row) {
-    col = col % SCREEN_WIDTH;
-    row = row % SCREEN_HEIGHT;
-
-    volatile unsigned char* video_memory = (volatile unsigned char*)VIDEO_MEMORY;
-    int offset = 2 * (row * SCREEN_WIDTH + col);
-    video_memory[offset] = c;
-    video_memory[offset + 1] = COLOR;
-}
-
-void del_last_char() {
-    if (current_col == 0) {
+// Plot a pixel at (x, y) with the specified 32-bit color.
+// For 32-bit mode, color is in 0x00RRGGBB format.
+void putpixel(int x, int y, uint32_t color) {
+    if (x < 0 || x >= SCREEN_WIDTH || y < 0 || y >= SCREEN_HEIGHT)
         return;
-    }
-
-    current_col--;
-    print_char_xy('\0', current_col, current_row);
-    move_cursor(current_row, current_col);
+    uint32_t offset = y * pitch + x * BYTES_PER_PIXEL;
+    *(uint32_t*)(framebuffer + offset) = color;
 }
 
-void print_char(unsigned char c) {
-    if (c == '\n') {
-        current_col = 0;
-        current_row++;
-    } else if (c == '\t') {
-        current_col += TAB_SIZE-(current_col % TAB_SIZE);
-    } else if (c == '\b') {
-        del_last_char();
+// Draw a filled rectangle at (x, y) with width and height, in the specified color.
+void draw_rect(int x, int y, int width, int height, uint32_t color) {
+    if (width <= 0 || height <= 0)
         return;
-    } else {
+    // Simple clipping
+    if (x < 0) { width += x; x = 0; }
+    if (y < 0) { height += y; y = 0; }
+    if (x + width > SCREEN_WIDTH)  width = SCREEN_WIDTH - x;
+    if (y + height > SCREEN_HEIGHT) height = SCREEN_HEIGHT - y;
+    if (width <= 0 || height <= 0)
+        return;
 
-        if (current_col >= SCREEN_WIDTH) {
-            current_col=0;
-            current_row++;
+    volatile uint8_t *row_ptr = framebuffer + y * pitch + x * BYTES_PER_PIXEL;
+    for (int j = 0; j < height; j++) {
+        uint32_t *pixel_ptr = (uint32_t*)row_ptr;
+        for (int i = 0; i < width; i++) {
+            pixel_ptr[i] = color;
         }
 
-        if (current_row >= SCREEN_HEIGHT) {
-            scroll_screen();
-            current_row = SCREEN_HEIGHT - 1;
+        row_ptr += pitch;
+    }
+}
+
+// draw_line: Draw a line from (x1, y1) to (x2, y2) in the given color using Bresenham's algorithm.
+void draw_line(int x1, int y1, int x2, int y2, uint32_t color) {
+    int dx = (x2 > x1 ? x2 - x1 : x1 - x2);
+    int dy = (y2 > y1 ? y2 - y1 : y1 - y2);
+    int sx = (x1 < x2 ? 1 : -1);
+    int sy = (y1 < y2 ? 1 : -1);
+    int err = dx - dy;
+
+    while (1) {
+        putpixel(x1, y1, color);
+        if (x1 == x2 && y1 == y2)
+            break;
+        int e2 = 2 * err;
+        if (e2 > -dy) { err -= dy; x1 += sx; }
+        if (e2 < dx) { err += dx; y1 += sy; }
+    }
+}
+
+// Draw a single character at (x, y) using the built-in 8x16 bitmap font.
+// (x, y) is the top-left corner where the character is drawn.
+void draw_char(int x, int y, char ch, uint32_t color) {
+    uint8_t c = (uint8_t)ch;  // Convert to unsigned value.
+    for (int row = 0; row < 16; row++) {
+        uint8_t bits = font8x16[c][row];
+        for (int col = 0; col < 8; col++) {
+            if (bits & (0x80 >> col)) {
+                putpixel(x + col, y + row, color);
+            }
         }
-
-        print_char_xy(c, current_col, current_row);
-        current_col++;
-    }
-
-    move_cursor(current_row, current_col);
-}
-
-void print_uint8(uint8_t value) {
-    if (value == 0) {
-        print_char('0');
-        return;
-    }
-
-    char buffer[3];
-    int i = 2;
-
-    while (value > 0 && i >= 0) {
-        buffer[i] = (value % 10) + '0';  // Convert digit to ASCII
-        value /= 10;
-        i--;
-    }
-
-    i++;
-    while (i < 3) {
-        print_char(buffer[i]);
-        i++;
     }
 }
 
-void print_uint16(uint16_t value) {
-    if (value == 0) {
-        print_char('0');
-        return;
+// Draw a null-terminated string starting at (x, y).
+void draw_string(int x, int y, const char *str, uint32_t color) {
+    while (*str) {
+        if (*str == '\n') {
+            y += 16;  // Move down by the font height
+            x = 0;    // Reset to the left margin
+        } else {
+            draw_char(x, y, *str, color);
+            x += 8;   // Advance by font width
+        }
+        str++;
     }
-
-    char buffer[5];
-    int i = 4;
-
-    while (value > 0 && i >= 0) {
-        buffer[i] = (value % 10) + '0';  // Convert digit to ASCII
-        value /= 10;
-        i--;
-    }
-
-    i++;
-    while (i < 5) {
-        print_char(buffer[i]);
-        i++;
-    }
-}
-
-void print_uint32(uint32_t value) {
-    if (value == 0) {
-        print_char('0');
-        return;
-    }
-
-    char buffer[10];
-    int i = 9;
-
-    while (value > 0 && i >= 0) {
-        buffer[i] = (value % 10) + '0';  // Convert digit to ASCII
-        value /= 10;
-        i--;
-    }
-
-    i++;
-    while (i < 10) {
-        print_char(buffer[i]);
-        i++;
-    }
-}
-
-void print(const char* str) {
-    for(int i=0; str[i] != 0; i++) {
-        print_char(str[i]);
-    }
-}
-
-void print_uint32_hex(uint32_t value) {
-    char buffer[9];
-    int_to_hex_str(value, buffer);
-    print(buffer);
-}
-
-void print_hex(uint32_t value, int num_digits) {
-    char buffer[9];
-    int_to_hex_str(value, buffer);
-
-    // Pad with zeros
-    int start = 8 - num_digits;
-    if (start < 0) start = 0;
-
-    for (int i = start; buffer[i] != '\0'; i++) {
-        print_char(buffer[i]);
-    }
-}
-
-void println(const char* str) {
-    print(str);
-    print_char('\n');
 }

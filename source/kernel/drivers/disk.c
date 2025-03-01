@@ -2,8 +2,13 @@
 // Created by Alan on 12/07/2024.
 // ATA PIO mode driver based on : https://wiki.osdev.org/ATA_PIO_Mode
 //
+#include <stdint.h>
+#include <stddef.h>
 
 #include "disk.h"
+#include "../core/x86.h"
+#include "../core/stdio.h"
+#include "../timers/timer.h"
 
 #define ATA_PRIMARY_DATA_PORT 0x1F0
 #define ATA_PRIMARY_ERROR_PORT 0x1F1
@@ -44,14 +49,8 @@
 
 static uint8_t last_selected_device = ATA_FLOATING_BUS;  // initial value is invalid - No drive
 
-// Helper functions for reading/writing from I/O
-extern uint8_t inb(uint16_t port);
-extern void outb(uint16_t port, uint8_t val);
-extern uint16_t inw(uint16_t port);
-extern void outw(uint16_t port, uint16_t val);
-
 uint8_t read_status(void) {
-    return inb(ATA_PRIMARY_ALT_STATUS_PORT);
+    return x86_inb(ATA_PRIMARY_ALT_STATUS_PORT);
 }
 
 char* read_status_str() {
@@ -84,23 +83,23 @@ int identify_device(ATA_IDENTIFY_DEVICE_DATA* device_info) {
     wait_not_busy();
 
     // Identify cmd params
-    outb(ATA_PRIMARY_SECTOR_COUNT_PORT, 0);
-    outb(ATA_PRIMARY_LBA_LOW_PORT, 0);
-    outb(ATA_PRIMARY_LBA_MID_PORT, 0);
-    outb(ATA_PRIMARY_LBA_HIGH_PORT, 0);
+    x86_outb(ATA_PRIMARY_SECTOR_COUNT_PORT, 0);
+    x86_outb(ATA_PRIMARY_LBA_LOW_PORT, 0);
+    x86_outb(ATA_PRIMARY_LBA_MID_PORT, 0);
+    x86_outb(ATA_PRIMARY_LBA_HIGH_PORT, 0);
 
-    outb(ATA_PRIMARY_COMMAND_PORT, ATA_IDENTIFY_DEVICE_CMD);
+    x86_outb(ATA_PRIMARY_COMMAND_PORT, ATA_IDENTIFY_DEVICE_CMD);
 
     uint8_t status = read_status();
     if (status == 0) {
-        println("[DISK] No device detected");
+        printf("[DISK] No device detected\r\n");
         return 0;
     }
 
     wait_not_busy();
 
-    if (inb(ATA_PRIMARY_LBA_MID_PORT) != 0 || inb(ATA_PRIMARY_LBA_HIGH_PORT) != 0) {
-        println("[DISK] Not an ATA device");
+    if (x86_inb(ATA_PRIMARY_LBA_MID_PORT) != 0 || x86_inb(ATA_PRIMARY_LBA_HIGH_PORT) != 0) {
+        printf("[DISK] Not an ATA device\r\n");
         return 0;
     }
 
@@ -113,14 +112,14 @@ int identify_device(ATA_IDENTIFY_DEVICE_DATA* device_info) {
         status = read_status();
 
         if (status & ATA_STATUS_ERR) {
-            println("[DISK] Error during device identification");
+            printf("[DISK] Error during device identification\r\n");
             return 0;
         }
         if (status & ATA_STATUS_DRQ) break;
 
         // Timeout
         if (current_time_low - start_time_low > timeout_duration) {
-            println("[DISK] Timeout during device identification");
+            printf("[DISK] Timeout during device identification\r\n");
             return 0;
         }
     }
@@ -128,7 +127,7 @@ int identify_device(ATA_IDENTIFY_DEVICE_DATA* device_info) {
     // Read data from IDENTIFY (data from IDENTIFY is in the form of 512 bytes - 256 words)
     uint16_t* data = (uint16_t*)device_info;
     for (int i = 0; i < sizeof(ATA_IDENTIFY_DEVICE_DATA) / 2; i++) {
-        data[i] = inw(ATA_PRIMARY_DATA_PORT);
+        data[i] = x86_inw(ATA_PRIMARY_DATA_PORT);
     }
 
     // Convert to strings
@@ -153,12 +152,12 @@ int identify_device(ATA_IDENTIFY_DEVICE_DATA* device_info) {
 
 void select_device(uint8_t device) {
     if (device != last_selected_device) {
-        outb(ATA_PRIMARY_DRIVE_PORT, device);
+        x86_outb(ATA_PRIMARY_DRIVE_PORT, device);
         last_selected_device = device;
 
         // Read the status register 15 times after device selection (waits 400ns)
         for (int i = 0; i < 15; i++) {
-            inb(ATA_PRIMARY_ALT_STATUS_PORT);
+            x86_inb(ATA_PRIMARY_ALT_STATUS_PORT);
         }
     }
 }
@@ -168,8 +167,8 @@ int detect_device(void) {
     wait_not_busy();
 
     uint8_t status = read_status();
-    uint8_t lba_mid = inb(ATA_PRIMARY_LBA_MID_PORT);
-    uint8_t lba_high = inb(ATA_PRIMARY_LBA_HIGH_PORT);
+    uint8_t lba_mid = x86_inb(ATA_PRIMARY_LBA_MID_PORT);
+    uint8_t lba_high = x86_inb(ATA_PRIMARY_LBA_HIGH_PORT);
     if (status == ATA_FLOATING_BUS && lba_mid == ATA_FLOATING_BUS && lba_high == ATA_FLOATING_BUS) {    // No drive
         return 0;
     }
@@ -185,16 +184,16 @@ void setup_drive_read_write(uint8_t device, uint32_t lba, uint8_t sector_count) 
     uint8_t drive_byte = (device == ATA_SLAVE_DRIVE) ? 0xF0 : 0xE0; // default to master drive (0xE0)
 
     // from "28 bit PIO" section of "https://wiki.osdev.org/ATA_PIO_Mode"
-    outb(ATA_PRIMARY_DRIVE_PORT, drive_byte | ((lba >> 24) & 0x0F));
-    outb(ATA_PRIMARY_SECTOR_COUNT_PORT, sector_count);
-    outb(ATA_PRIMARY_LBA_LOW_PORT, (uint8_t)(lba));
-    outb(ATA_PRIMARY_LBA_MID_PORT, (uint8_t)(lba >> 8));
-    outb(ATA_PRIMARY_LBA_HIGH_PORT, (uint8_t)(lba >> 16));
+    x86_outb(ATA_PRIMARY_DRIVE_PORT, drive_byte | ((lba >> 24) & 0x0F));
+    x86_outb(ATA_PRIMARY_SECTOR_COUNT_PORT, sector_count);
+    x86_outb(ATA_PRIMARY_LBA_LOW_PORT, (uint8_t)(lba));
+    x86_outb(ATA_PRIMARY_LBA_MID_PORT, (uint8_t)(lba >> 8));
+    x86_outb(ATA_PRIMARY_LBA_HIGH_PORT, (uint8_t)(lba >> 16));
 }
 
 int read_sectors(uint32_t lba, uint8_t sector_count, uint8_t* buffer) {
     setup_drive_read_write(ATA_MASTER_DRIVE, lba, sector_count);
-    outb(ATA_PRIMARY_COMMAND_PORT, ATA_READ_SECTORS_CMD);
+    x86_outb(ATA_PRIMARY_COMMAND_PORT, ATA_READ_SECTORS_CMD);
 
     // read data
 	for (int sector = 0; sector < sector_count; sector++) {
@@ -203,12 +202,12 @@ int read_sectors(uint32_t lba, uint8_t sector_count, uint8_t* buffer) {
 
         uint8_t status = read_status();
         if (status & ATA_STATUS_ERR) {
-            println("[DISK] Error reading sector");
+            printf("[DISK] Error reading sector\r\n");
             return 0;
         }
 
         for (int i = 0; i < 256; i++) {	// 256 words (512 bytes) per sector
-            uint16_t data = inw(ATA_PRIMARY_DATA_PORT);
+            uint16_t data = x86_inw(ATA_PRIMARY_DATA_PORT);
             buffer[i * 2] = (uint8_t)data;
             buffer[i * 2 + 1] = (uint8_t)(data >> 8);
         }
@@ -221,7 +220,7 @@ int read_sectors(uint32_t lba, uint8_t sector_count, uint8_t* buffer) {
 
 int write_sectors(uint32_t lba, uint8_t sector_count, const uint8_t* buffer) {
     setup_drive_read_write(ATA_MASTER_DRIVE, lba, sector_count);
-    outb(ATA_PRIMARY_COMMAND_PORT, ATA_WRITE_SECTORS_CMD);
+    x86_outb(ATA_PRIMARY_COMMAND_PORT, ATA_WRITE_SECTORS_CMD);
 
     // write data
     const uint16_t* buf = (const uint16_t*)buffer;
@@ -231,11 +230,11 @@ int write_sectors(uint32_t lba, uint8_t sector_count, const uint8_t* buffer) {
 
         // Write 512 bytes for each sector
         for (int i = 0; i < 256; i++) {
-            outw(ATA_PRIMARY_DATA_PORT, buf[i]);
+            x86_outw(ATA_PRIMARY_DATA_PORT, buf[i]);
         }
         buf += 256;
 
-        outb(ATA_PRIMARY_COMMAND_PORT, ATA_FLUSH_CACHE_CMD);
+        x86_outb(ATA_PRIMARY_COMMAND_PORT, ATA_FLUSH_CACHE_CMD);
         wait_not_busy();
     }
 
@@ -262,32 +261,28 @@ char* get_device_firmware_revision(ATA_IDENTIFY_DEVICE_DATA* device_info) {
 }
 
 void print_ata_device_info(ATA_IDENTIFY_DEVICE_DATA* device_info_ptr) {
-    print("Model:\t");
-    print(get_device_model_number(device_info_ptr));
-    print("\nSerial:\t");
-    print(get_device_serial_number(device_info_ptr));
-    print("\nFirmware:\t");
-    print(get_device_firmware_revision(device_info_ptr));
-    print_char('\n');
+    printf("Model:\t%s\r\nSerial:\t%s\r\nFirmware:\t%s\r\n",
+        get_device_model_number(device_info_ptr),
+        get_device_serial_number(device_info_ptr),
+        get_device_firmware_revision(device_info_ptr));
 }
 
 void init_disk(void) {
-    println("[DISK] Initializing disk...");
+    printf("[DISK] Initializing disk...\r\n");
 
     if (!detect_device()) {
-        println("[DISK] No drive detected");
+        printf("[DISK] No drive detected\r\n");
         return;
     }
 
-	print("[DISK] Disk status: ");
-	println(read_status_str());
+	printf("[DISK] Disk status: %s\r\n", read_status_str());
 
     ATA_IDENTIFY_DEVICE_DATA device_info;
     if (identify_device(&device_info)) {
-        println("[DISK] Device Information:");
+        printf("[DISK] Device Information:\r\n");
         print_ata_device_info(&device_info);
-        println("[DISK] ATA disk initialized");
+        printf("[DISK] ATA disk initialized\r\n");
     } else {
-        println("[DISK] Failed to initialize ATA disk");
+        printf("[DISK] Failed to initialize ATA disk\r\n");
     }
 }

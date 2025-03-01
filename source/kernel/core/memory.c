@@ -1,5 +1,3 @@
-//
-// Created by Alan on 18/07/2024.
 /* Derived from: https://embeddedartistry.com/blog/2017/03/22/memset-memcpy-memcmp-and-memmove/
 and: https://opensource.apple.com/source/xnu/xnu-2050.7.9/libsyscall/wrappers/memcpy.c
 
@@ -10,8 +8,12 @@ malloc(), calloc() and free() were based on a simplified implementation of a com
 */
 
 #include "memory.h"
-#include "../types.h"
-#include "../drivers/display.h"
+
+#include <stdint.h>
+#include <stddef.h>
+
+#include "stdio.h"
+#include "../libs/string.h"
 
 #define wsize sizeof(uint32_t)
 #define wmask (wsize - 1)
@@ -168,12 +170,12 @@ void* malloc(size_t size) {
             if (current->Size > size + sizeof(MemoryBlock) + BLOCK_SIZE) {    // If the block is larger than the requested size
                 MemoryBlock* new_block = (MemoryBlock*)((uint8_t*)current + sizeof(MemoryBlock) + size);
                 new_block->Size = current->Size - size - sizeof(MemoryBlock);
-                new_block->IsFree = TRUE;
+                new_block->IsFree = true;
                 new_block->Next = current->Next;
                 current->Size = size;
                 current->Next = new_block;
             }
-            current->IsFree = FALSE;
+            current->IsFree = false;
             result = (void*)(current + 1);
             return result;
         }
@@ -199,30 +201,34 @@ void free(void *ptr) {
     }
 
     MemoryBlock* block = (MemoryBlock*)ptr - 1;
-    block->IsFree = TRUE;
+    block->IsFree = true;
 
     merge_surrounding_free_blocks(block);
 }
 
 // for debug only! (inclusive, not inclusive)
 void memdump_array(uint8_t* address, int start, int end) {
-    for (int i = start; i < end; i++) {
+    for (int i = start; i < end; i += 16) {
+        // print offset
+        printf("%x: ", i);
 
-        if (i % 16 == 0) {
-            print("\n");
-            print_hex(i, 4);
-            print(": ");
+        // Print 16 bytes on this line
+        for (int j = i; j < i + 16 && j < end; j++) {
+            // Manually add a leading zero if the value is less than 16
+            if (address[j] < 16) {
+                printf("0%x ", address[j]);
+            } else {
+                printf("%x ", address[j]);
+            }
         }
-        print_hex(address[i], 2);
-        print(" ");
+        printf("\r\n");
     }
-    println("");
 }
 
 void init_memory() {
     head = (MemoryBlock*)heap;
     head->Size = MEMORY_SIZE - sizeof(MemoryBlock);
-    head->IsFree = TRUE;
+    head->IsFree = true;
     head->Next = NULL;
-    println("[MEMORY] Heap initialised");
+    printf("[MEMORY] Heap initialised\r\n");
 }

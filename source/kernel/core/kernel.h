@@ -6,7 +6,7 @@
 
 #include "idt.h"
 #include "../drivers/keyboard.h"
-#include "../libs/str.h"
+#include "../libs/string.h"
 #include "../filesystems/filesystem.h"
 #include "../drivers/disk.h"
 #include "../timers/timer.h"

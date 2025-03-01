@@ -1,7 +1,7 @@
 # PROJECT MAKEFILE
 include config.mk
 
-.PHONY: all floppy_image kernel bootloader clean bochs lsimgroot hexdumpsector printdirs always
+.PHONY: all floppy_image kernel bootloader clean bochs lsimgroot hexdumpsector printdirs printinclude always
 
 all: floppy_image
 
@@ -53,7 +53,6 @@ $(BUILD_DIR)/kernel.bin: always
 always:
 	@mkdir -p $(BUILD_DIR)
 
-
 #
 # Run with Bochs
 #
@@ -68,6 +67,9 @@ hexdumpsector:
 
 printdirs:
 	python3 tools/print_dirs.py
+
+printinclude:
+	ls $(HOME)/opt/cross/lib/gcc/i686-elf/14.2.0/include
 
 #
 # Clean

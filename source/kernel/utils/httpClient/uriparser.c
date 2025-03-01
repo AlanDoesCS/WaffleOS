@@ -2,9 +2,9 @@
 // https://datatracker.ietf.org/doc/html/rfc3986
 //
 
+#include <stddef.h>
+
 #include "uriparser.h"
-#include "../memory.h"
-#include "../../libs/str.h"
 
 void uri_init(URI* uri) {
     if (uri) {

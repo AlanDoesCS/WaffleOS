@@ -1,12 +1,9 @@
 //
-// Created by Alan on 12/07/2024.
 // Based on: https://wiki.osdev.org/FAT
 //
 
-#ifndef FILESYSTEM_H
-#define FILESYSTEM_H
+#pragma once
 
-#include "../types.h"
 #include "../drivers/disk.h"
 
 #define MAX_PATH_LENGTH 256
@@ -202,5 +199,3 @@ void init_fat_partition(uint32_t partition_start_lba, uint8_t* boot_sector);
 void parse_gpt();
 void parse_mbr(LegacyMBR* mbr);
 FATType get_fat_type(uint32_t total_clusters, uint16_t bytes_per_sector);
-
-#endif // FILESYSTEM_H

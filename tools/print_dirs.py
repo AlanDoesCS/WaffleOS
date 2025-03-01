@@ -10,4 +10,4 @@ def print_dirs(path):
             print(os.path.join(root, f).removeprefix(path+"/"))
 
 if __name__ == '__main__':
-    print_dirs('../WaffleOS')
+    print_dirs('../WaffleOS/source')

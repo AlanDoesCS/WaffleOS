@@ -1,5 +1,4 @@
 #include "datastructures.h"
-#include "../types.h"
 #include "../core/memory.h"
 
 SinglyLinkedListNode* SinglyLinkedListNode_Create(size_t size) {

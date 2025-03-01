@@ -1,7 +1,8 @@
 #pragma once
 
-#include "stdint.h"
-#include "../types.h"
+#include <stdint.h>
+#include <stddef.h>
+#include <stdbool.h>
 
 #define MEMORY_SIZE 0x100000    // 1MB
 #define BLOCK_SIZE 16

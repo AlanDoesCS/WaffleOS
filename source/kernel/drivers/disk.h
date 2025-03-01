@@ -1,12 +1,7 @@
-//
-// Created by Alan on 12/07/2024.
-//
+#pragma once
 
-#ifndef DISK_H
-#define DISK_H
-
-#include "stdint.h"
-#include "../types.h"
+#include <stdint.h>
+#include <stddef.h>
 
 #define SECTOR_SIZE 512
 
@@ -435,5 +430,3 @@ void wait_ready(void);
 int read_sectors(uint32_t lba, uint8_t sector_count, uint8_t* buffer);
 int write_sectors(uint32_t lba, uint8_t sector_count, const uint8_t* buffer);
 int identify_device(ATA_IDENTIFY_DEVICE_DATA* device_info);
-
-#endif //DISK_H

@@ -123,6 +123,7 @@ For linux mint:
               --enable-all-optimizations \
               --enable-x86-64 \
               --enable-pci \
+              --enable-vbe \
               --enable-vmx \
               --enable-debugger \
               --enable-disasm \

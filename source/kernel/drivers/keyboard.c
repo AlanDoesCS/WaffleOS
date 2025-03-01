@@ -1,16 +1,13 @@
-//
-// Created by Alan on 11/07/2024.
-//
+// A basic keyboar driver for reading input from the user
+
+#include <stdint.h>
+#include <stddef.h>
 
 #include "keyboard.h"
-#include "display.h"
+#include "../core/stdio.h"
+#include "../core/x86.h"
 #include "../core/idt.h"
 #include "../core/kernel.h"
-#include "../types.h"
-
-// Helper functions for reading/writing from I/O
-extern unsigned char inb(unsigned short port);
-extern void outb(unsigned short port, unsigned char val);
 
 extern void irq1(void);
 
@@ -21,7 +18,7 @@ extern void irq1(void);
 #define MAX_INPUT_LENGTH 256
 
 char input_buffer[MAX_INPUT_LENGTH];
-int buffer_index = 0;
+uint32_t buffer_index = 0;
 volatile int line_ready = 0;  // line ready to return flag
 volatile int min_col = 0;
 
@@ -35,17 +32,18 @@ const char scancode_to_ascii[] = {
 };
 
 void keyboard_handler(void) {
-    unsigned char status;
-    unsigned char scancode;
+    uint8_t status;
+    uint8_t scancode;
     char ascii;
 
-    status = inb(KEYBOARD_STATUS_PORT);
+    status = x86_inb(KEYBOARD_STATUS_PORT);
     if (status & 0x01) {
-        scancode = inb(KEYBOARD_DATA_PORT);
+        scancode = x86_inb(KEYBOARD_DATA_PORT);
 
         if (!(scancode & 0x80)) {    // ensure key press
             if (scancode == ENTER_SCANCODE) {
-                print_char('\n');
+                putc('\r');
+                putc('\n');
                 input_buffer[buffer_index] = '\0';
                 line_ready = 1;  // set flag
                 send_eoi(1);  // send end of interrupt signal
@@ -57,12 +55,12 @@ void keyboard_handler(void) {
                 }
                 buffer_index--;
                 input_buffer[buffer_index] = '\0';
-                del_last_char();
+                putc('\b');
             } else if (buffer_index < MAX_INPUT_LENGTH - 1) {
                 ascii = scancode_to_ascii[scancode];
                 if (ascii != 0) {
                     input_buffer[buffer_index++] = ascii;
-                    print_char(ascii);
+                    putc(ascii);
                 }
             }
         }
@@ -72,21 +70,21 @@ void keyboard_handler(void) {
 }
 
 void init_keyboard(void) {
-    println("[I/O] Initializing keyboard...");
+    printf("[I/O] Initializing keyboard...\r\n");
 
     register_interrupt_handler(33, (uint32_t)irq1);
 
     // enable keyboard IRQ
     enable_irq(1);
 
-    println("[I/O] Keyboard initialized");
+    printf("[I/O] Keyboard initialized\r\n");
 }
 
 
 void reset_keyboard(void) {
     buffer_index = 0;
     line_ready = 0;
-    min_col = get_cursor_col();
+    min_col = get_g_screenx();
 }
 
 
