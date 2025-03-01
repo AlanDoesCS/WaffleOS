@@ -4,6 +4,7 @@ A Unix-like open source operating system written in NASM and C, with the goal of
 <img src="https://github.com/user-attachments/assets/0553e678-e8b8-4853-ad1e-6e97e162c5fd" alt="drawing" width="256"/> <img src="https://github.com/user-attachments/assets/4fd84e48-94bf-4ded-829d-f6726b7cd01d" alt="CLI" width="256"/>
 
 ![Hack Club arcade 2024 finalist](https://img.shields.io/badge/Hack%20Club%20arcade%202024-showcase%20finalist-gold?logo=https%3A%2F%2Fassets.hackclub.com%2Ficon-rounded.png&logoSize=auto&labelColor=orange)
+![License: GPL](https://img.shields.io/badge/License-GPL-blue.svg)
 [![CodeFactor](https://www.codefactor.io/repository/github/alandoescs/waffleos/badge)](https://www.codefactor.io/repository/github/alandoescs/waffleos)
 ![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/AlanDoesCS/WaffleOS)
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/t/AlanDoesCS/WaffleOS)
@@ -16,6 +17,7 @@ A Unix-like open source operating system written in NASM and C, with the goal of
 1) [Current Features](#features)
 2) [Installation Guide](#installation)
 3) [Command List](#commands)
+4) [References](#references)
 
 ---
 ## Features
@@ -54,6 +56,32 @@ A Unix-like open source operating system written in NASM and C, with the goal of
 
 1) First you will need to clone this repository before you can proceed with the installation
 2) https://wiki.osdev.org/GCC_Cross-Compiler
+
+### Bochs
+
+For linux mint, I recommend to use these configuration flags for bochs:
+```shell
+./configure --enable-smp \
+              --enable-cpu-level=6 \
+              --enable-all-optimizations \
+              --enable-x86-64 \
+              --enable-pci \
+              --enable-vbe \
+              --enable-vmx \
+              --enable-debugger \
+              --enable-disasm \
+              --enable-debugger-gui \
+              --enable-logging \
+              --enable-fpu \
+              --enable-3dnow \
+              --enable-sb16=dummy \
+              --enable-cdrom \
+              --enable-x86-debugger \
+              --enable-iodebug \
+              --disable-plugins \
+              --disable-docbook \
+              --with-term --with-sdl2
+```
 
 ### x86 based device
 
@@ -96,32 +124,6 @@ These features have NOT YET BEEN IMPLEMENTED (hence WIP)
 - Graphics
     - `graphics -enable/disable` (enables or disables vbe graphics)
 
-# Bochs
-
-For linux mint, I recommend to use these configuration flags for bochs:
-```shell
-./configure --enable-smp \
-              --enable-cpu-level=6 \
-              --enable-all-optimizations \
-              --enable-x86-64 \
-              --enable-pci \
-              --enable-vbe \
-              --enable-vmx \
-              --enable-debugger \
-              --enable-disasm \
-              --enable-debugger-gui \
-              --enable-logging \
-              --enable-fpu \
-              --enable-3dnow \
-              --enable-sb16=dummy \
-              --enable-cdrom \
-              --enable-x86-debugger \
-              --enable-iodebug \
-              --disable-plugins \
-              --disable-docbook \
-              --with-term --with-sdl2
-```
-
 # References
 Many thanks to the following resources for helping me to create WaffleOS, I would not have been able to do it without them:
 ```bibtex
@@ -147,3 +149,7 @@ Many thanks to the following resources for helping me to create WaffleOS, I woul
   note         = {Accessed: 2025-03-01}
 }
 ```
+
+## License
+
+This project is licensed under the terms of the [GNU General Public License](LICENSE).
