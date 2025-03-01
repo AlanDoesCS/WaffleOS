@@ -123,6 +123,7 @@ For linux mint, I recommend to use these configuration flags for bochs:
 ```
 
 # References
+Many thanks to the following resources for helping me to create WaffleOS, I would not have been able to do it without them:
 ```bibtex
 @misc{nanobyte_os,
   author       = {Tiberiu C.},
