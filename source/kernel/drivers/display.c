@@ -9,10 +9,6 @@
 // #include "vbe_switch.h"
 #include "font8x16.h" // contains a basic 8x16 font in a 2D array
 
-#define SCREEN_WIDTH   640
-#define SCREEN_HEIGHT  480
-#define BYTES_PER_PIXEL 4    // 4 for 32-bit color (each pixel is 4 bytes)
-
 static uint32_t vbe_framebuffer;  // will hold the LFB address
 
 // Global variables to hold the framebuffer pointer and pitch.

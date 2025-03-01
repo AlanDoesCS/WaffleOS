@@ -1,7 +1,11 @@
-; set_vesa_mode.asm
 BITS 16
 
 global set_vesa_mode
+global vbe_lfb_address   ; make it accessible to C
+
+; Define vbe_lfb_address in the .data section
+section .data
+vbe_lfb_address: dd 0
 
 ; Structure to hold VESA mode information
 struc VbeModeInfoBlock
@@ -34,7 +38,7 @@ struc VbeModeInfoBlock
     .ReservedMaskSize    resb 1
     .ReservedFieldPosition resb 1
     .DirectColorModeInfo resb 1
-    .PhysBasePtr         resd 1
+    .PhysBasePtr         resd 1        ; <-- LFB address field at offset 40
     .OffScreenMemOffset  resd 1
     .OffScreenMemSize    resw 1
     .Reserved2           resb 206
@@ -50,20 +54,24 @@ set_vesa_mode:
 
     ; Set up the mode number (e.g., 0x118)
     mov ax, 0x4F02
-    mov bx, 0112  ; Mode number (adjust as needed)
+    mov bx, 0112          ; Mode number (adjust as needed)
     int 0x10
     cmp ax, 0x004F
     jne .error
 
     ; Retrieve mode information
     mov ax, 0x4F01
-    mov cx, 0x118  ; Mode number (same as above)
+    mov cx, 0x118         ; Mode number (same as above)
     mov di, vbeModeInfoBlock
     int 0x10
     cmp ax, 0x004F
     jne .error
 
-    ; Successfully set mode
+    ; Extract the LFB address from the VBE mode info block
+    ; PhysBasePtr is located at offset 40 bytes in the structure.
+    mov eax, [vbeModeInfoBlock + 40]
+    mov [vbe_lfb_address], eax
+
     popa
     ret
 

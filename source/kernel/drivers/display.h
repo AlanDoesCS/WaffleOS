@@ -4,6 +4,10 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#define SCREEN_WIDTH   640
+#define SCREEN_HEIGHT  480
+#define BYTES_PER_PIXEL 4    // 4 for 32-bit color (each pixel is 4 bytes)
+
 typedef struct {
     uint8_t b;
     uint8_t g;

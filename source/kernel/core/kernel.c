@@ -15,13 +15,12 @@ typedef struct BootInfo {
     uint32_t lfb_address;
 } BootInfo;
 
-void __attribute__((section(".entry"))) start(BootInfo *boot_info) {
+//void __attribute__((section(".entry"))) start(BootInfo *boot_info) {
+void __attribute__((section(".entry"))) start(uint16_t boot_drive) {
     memset((void*)(&__bss_start), (int)0, (size_t)((&__end) - (&__bss_start)));
-    display_init(boot_info->lfb_address, SCREEN_WIDTH * BYTES_PER_PIXEL); // uint32_t framebuffer_addr, uint32_t pitch_val
+    //display_init(boot_info->lfb_address, SCREEN_WIDTH * BYTES_PER_PIXEL);
+    //g_clrscr(0x55555555);  // Clear the screen.
 
-    g_clrscr(0x0000FF00);  // Clear the screen.
-
-    /*
     clrscr();
 	print_splash();
 
@@ -41,7 +40,6 @@ void __attribute__((section(".entry"))) start(BootInfo *boot_info) {
 
         execute_command(input);
     }
-     */
 
 end: // should be unreachable
     for (;;);
@@ -84,7 +82,7 @@ void execute_command(char* command) {
         while(true) {
             continue;
         }
-        //printf("Made it back safe omg\r\n");
+        //printf("Made it back safe\r\n");
 
         /*
         draw_rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0x00000000);
@@ -100,18 +98,17 @@ void execute_command(char* command) {
 
         // Draw a string.
         draw_string(50, 150, "Hello, World!\nNew line", 0x00FFFFFF);
+         */
     } else {
         // Default case: Print the entered command
         printf("Unrecognised command: %s\r\n", command);
-
-         */
     }
 }
 
 void print_splash(void) {
-    printf("\n\t\t\t\t\t\t\t\t  \xC9\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xBB\r\n");  // ╔══════════╗
-    printf("\t\t\t\t\t\t\t\t  \xBA WaffleOS \xBA\r\n");                                  // ║ WaffleOS ║
-    printf("\t\t\t\t\t\t\t\t  \xC8\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xBC\n\r\n");  // ╚══════════╝
+    printf("\n\t  \xC9\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xBB\r\n");  // ╔══════════╗
+    printf("\t  \xBA WaffleOS \xBA\r\n");                                  // ║ WaffleOS ║
+    printf("\t  \xC8\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xBC\n\r\n");  // ╚══════════╝
 }
 
 void cowsay(char* message) {    // TODO: change once string concatenation is improved (requires memory allocation)
