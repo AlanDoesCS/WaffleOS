@@ -1,13 +1,38 @@
 import os
 
-def print_dirs(path):
-    for root, dirs, files in os.walk(path):
-        # Remove directories that contain .git or .venv from the traversal
-        dirs[:] = [d for d in dirs if ".git" not in d and ".venv" not in d and ".idea" not in d]
+def print_dirs(directory, prefix="", is_top_level=True):
+    entries = os.listdir(directory)
+    entries = [e for e in entries if not any(x in e for x in [".git", ".venv", ".idea"])]
+    entries.sort(key=lambda e: (not os.path.isdir(os.path.join(directory, e)), e.lower()))
 
-        # Print files once per directory level
-        for f in files:
-            print(os.path.join(root, f).removeprefix(path+"/"))
+    for i, entry in enumerate(entries):
+        full_path = os.path.join(directory, entry)
+        is_last = (i == len(entries) - 1)
+
+        if os.path.isdir(full_path):
+            if is_top_level:
+                print(f"{entry}/")
+            else:
+                connector = "└── " if is_last else "├── "
+                print(prefix + connector + entry + "/")
+
+            if is_top_level:
+                new_prefix = "    " if is_last else "│   "
+            else:
+                new_prefix = prefix + ("    " if is_last else "│   ")
+
+            # Recurse down into the directory
+            print_dirs(full_path, new_prefix, is_top_level=False)
+
+        else:
+            if is_top_level:
+                if not is_last:
+                    print(f"│── {entry}")
+                else:
+                    print(f"└── {entry}")
+            else:
+                connector = "└── " if is_last else "├── "
+                print(prefix + connector + entry)
 
 if __name__ == '__main__':
-    print_dirs('../WaffleOS/source')
+    print_dirs('..')

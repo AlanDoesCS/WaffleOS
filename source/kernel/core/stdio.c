@@ -313,6 +313,7 @@ void printf(const char* fmt, ...)
                 length = PRINTF_LENGTH_DEFAULT;
                 radix = 10;
                 sign = false;
+                number = false;
                 break;
         }
 

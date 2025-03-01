@@ -1,7 +1,7 @@
 # KERNEL MAKEFILE
 # source: https://github.com/nanobyte-dev/nanobyte_os/blob/videos/part7/src/kernel/Makefile
 TARGET_ASMFLAGS += -f elf
-TARGET_CFLAGS += -ffreestanding -nostdlib # -Wall -Wextra
+TARGET_CFLAGS += -ffreestanding -nostdlib -D__LINUX__ -Iinclude/ # -Wall -Wextra
 TARGET_LIBS += -lgcc
 TARGET_LINKFLAGS += -T linker.ld -nostdlib
 
@@ -31,4 +31,4 @@ $(BUILD_DIR)/kernel/asm/%.obj: %.asm
 	@echo "--> Compiled: " $<
 
 clean:
-	rm -f $(BUILD_DIR)/kernel.bin
+	rm -rf $(BUILD_DIR)/kernel.bin $(BUILD_DIR)/kernel/

@@ -50,18 +50,9 @@ void __attribute__((section(".entry"))) start(uint16_t boot_drive) {
 void execute_command(char* command) {
     SinglyLinkedList* args = strsplit(command, ' ');
     char* cmd = NULL;
-    if (args->head) {
-        // cast data to (char**), then dereference:
-        cmd = *((char**)args->head->data);
-    }
-    char* arg1 = NULL;
-    if (args->head && args->head->next) {
-        arg1 = *((char**)args->head->next->data);
-    }
-
-    char* arg2 = NULL;
-    if (args->head && args->head->next && args->head->next->next) {
-        arg2 = *((char**)args->head->next->data);
+    char** cmd_ptr = (char**)SinglyLinkedList_Get(args, 0);
+    if (cmd_ptr) {
+        cmd = *cmd_ptr;
     }
 
     if (strcmp(cmd, "clear") == 0) {
@@ -90,9 +81,19 @@ void execute_command(char* command) {
         printf("| |_|_|_|_|_|_|_| |\r\n");
         printf("\\_________________/\r\n\r\n");
     } else if (strcmp(cmd, "cowsay") == 0) {
-        cowsay("WaffleOS!");
+        char* message = "WaffleOS!";
+        char** message_ptr = (char**)SinglyLinkedList_Get(args, 1);
+        if (message_ptr) {
+            message = *message_ptr;
+        }
+        cowsay(message);
     } else if (strcmp(cmd, "mkdir") == 0) {
-        FAT_MakeDirectory(arg1);
+        char* dir = NULL;
+        char** dir_ptr = (char**)SinglyLinkedList_Get(args, 1);
+        if (dir_ptr) {
+            dir = *dir_ptr;
+        }
+        FAT_MakeDirectory(dir);
     } else if (strcmp(cmd, "cd") == 0) {
     } else if (strcmp(cmd, "touch") == 0) {
     } else if (strcmp(cmd, "cat") == 0) {
@@ -101,8 +102,13 @@ void execute_command(char* command) {
     } else if (strcmp(cmd, "vis") == 0) {
         printf("Starting visualiser for \r\n");
     } else if (strcmp(cmd, "ping") == 0) {
-        printf("PING %s: 56 data bytes\r\n", arg1);
-        printf("--- %s ping statistics ---\r\n", arg1);
+        char* target = NULL;
+        char** target_ptr = (char**)SinglyLinkedList_Get(args, 1);
+        if (target_ptr) {
+            target = *target_ptr;
+        }
+        printf("PING %s: 56 data bytes\r\n", target);
+        printf("--- %s ping statistics ---\r\n", target);
         printf("2 packets transmitted, 2 received, 0%% packet loss, time 1001ms\r\n");
     } else if (strcmp(cmd, "enablegraphics") == 0) {
         // Enable graphics mode
@@ -145,5 +151,26 @@ void print_splash(void) {
 }
 
 void cowsay(char* message) {    // TODO: change once string concatenation is improved (requires memory allocation)
-    printf(" ___________\r\n< %s >\r\n -----------\r\n        \\   ^__^\r\n         \\  (oo)\\_______\r\n            (__)\\       )\\/\\\r\n                ||----w |\r\n                ||     ||\r\n\r\n", message);;
+    size_t len = strlen(message);
+    size_t width = len + 2; // Padding for spaces around the message
+
+    // Print top border of the speech bubble
+    printf(" ");
+    for (size_t i = 0; i < width; i++) {
+        printf("_");
+    }
+    printf("\n");
+
+    // Print message with borders
+    printf("< %s >\n", message);
+
+    // Print bottom border of the speech bubble
+    printf(" ");
+    for (size_t i = 0; i < width; i++) {
+        printf("-");
+    }
+    printf("\n");
+
+    // print the cow
+    printf("        \\   ^__^\r\n         \\  (oo)\\_______\r\n            (__)\\       )\\/\\\r\n                ||----w |\r\n                ||     ||\r\n\r\n", message);;
 }
