@@ -4,6 +4,8 @@
 #include "memory.h"
 
 #include "../drivers/display.h"
+#include "../drivers/floppy.h"
+#include "../drivers/fat.h"
 #include "../libs/string.h"
 #include "kernel.h"
 
@@ -22,14 +24,14 @@ void __attribute__((section(".entry"))) start(uint16_t boot_drive) {
     //g_clrscr(0x55555555);  // Clear the screen.
 
     clrscr();
-	print_splash();
+    print_splash();
 
     init_memory();
     init_idt();
     init_pit();
     init_disk();
     //init_filesystem();    // Currently non-functional
-	init_keyboard();
+    init_keyboard();
 
     enable_interrupts();
 
@@ -41,26 +43,42 @@ void __attribute__((section(".entry"))) start(uint16_t boot_drive) {
         execute_command(input);
     }
 
-end: // should be unreachable
-    for (;;);
+    end: // should be unreachable
+        for (;;);
 }
 
 void execute_command(char* command) {
-    if (strcmp(command, "clear") == 0) {
+    SinglyLinkedList* args = strsplit(command, ' ');
+    char* cmd = NULL;
+    if (args->head) {
+        // cast data to (char**), then dereference:
+        cmd = *((char**)args->head->data);
+    }
+    char* arg1 = NULL;
+    if (args->head && args->head->next) {
+        arg1 = *((char**)args->head->next->data);
+    }
+
+    char* arg2 = NULL;
+    if (args->head && args->head->next && args->head->next->next) {
+        arg2 = *((char**)args->head->next->data);
+    }
+
+    if (strcmp(cmd, "clear") == 0) {
         clrscr();
         return;
-    } else if (strcmp(command, "help") == 0) {
+    } else if (strcmp(cmd, "help") == 0) {
         printf("\r\nAvailable commands:\r\nclear - Clear the screen\r\nhelp - Display this help message\r\nsystime - Prints the time since startup\r\n");
         return;
-    } else if (strcmp(command, "shutdown") == 0) { // TODO: Implement shutdown
+    } else if (strcmp(cmd, "shutdown") == 0) { // TODO: Implement shutdown
         printf("Shutting down...\r\n");
-    } else if (strcmp(command, "systime") == 0) {
+    } else if (strcmp(cmd, "systime") == 0) {
         printf("Time since startup: ");
         print_systime();
         printf("\r\n");
-    } else if (strcmp(command, "hello") == 0) {
+    } else if (strcmp(cmd, "hello") == 0) {
         printf("Hello, World!\r\n");
-    } else if ((strcmp(command, "waffle") == 0) | (strcmp(command, "waffleos") == 0)) {
+    } else if ((strcmp(cmd, "waffle") == 0) || (strcmp(command, "waffleos") == 0)) {
         print_splash();
         printf(" _________________\r\n");
         printf("/ ._____________. \\\r\n");
@@ -71,9 +89,22 @@ void execute_command(char* command) {
         printf("| |_|_|_|_|_|_|_| |\r\n");
         printf("| |_|_|_|_|_|_|_| |\r\n");
         printf("\\_________________/\r\n\r\n");
-    } else if (strcmp(command, "cowsay") == 0) {
+    } else if (strcmp(cmd, "cowsay") == 0) {
         cowsay("WaffleOS!");
-    } else if (strcmp(command, "enablegraphics") == 0) {
+    } else if (strcmp(cmd, "mkdir") == 0) {
+        FAT_MakeDirectory(arg1);
+    } else if (strcmp(cmd, "cd") == 0) {
+    } else if (strcmp(cmd, "touch") == 0) {
+    } else if (strcmp(cmd, "cat") == 0) {
+    } else if (strcmp(cmd, "mv") == 0) {
+    } else if (strcmp(cmd, "ls") == 0) {
+    } else if (strcmp(cmd, "vis") == 0) {
+        printf("Starting visualiser for \r\n");
+    } else if (strcmp(cmd, "ping") == 0) {
+        printf("PING %s: 56 data bytes\r\n", arg1);
+        printf("--- %s ping statistics ---\r\n", arg1);
+        printf("2 packets transmitted, 2 received, 0%% packet loss, time 1001ms\r\n");
+    } else if (strcmp(cmd, "enablegraphics") == 0) {
         // Enable graphics mode
         enable_graphics();
 
@@ -101,8 +132,10 @@ void execute_command(char* command) {
          */
     } else {
         // Default case: Print the entered command
-        printf("Unrecognised command: %s\r\n", command);
+        printf("Unrecognised command: %s\r\n", cmd);
     }
+
+    SinglyLinkedList_Free(args);
 }
 
 void print_splash(void) {

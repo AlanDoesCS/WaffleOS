@@ -1,47 +1,54 @@
-//
-// Based on: https://wiki.osdev.org/FAT
-//
+// source: https://github.com/nanobyte-dev/nanobyte_os/blob/videos/part7/src/bootloader/stage2/fat.h
+
+// And based on: https://wiki.osdev.org/FAT
+// and: https://wiki.osdev.org/GPT
+// and: https://uefi.org/specs/UEFI/2.10/05_GUID_Partition_Table_Format.html
 
 #pragma once
-
+#include <stdint.h>
+#include <stdbool.h>
+#include "../core/memory.h"
 #include "../drivers/disk.h"
 
 #define MAX_PATH_LENGTH 256
+#define MAX_FILE_HANDLES 10
 
-typedef enum {
-    FAT12,
-    FAT16,
-    FAT32,
-    ExFAT,
-    Unknown
-} FATType;
+#define GPT_PROTECTIVE_MBR 0xEE
+#define UEFI_SYSTEM_PARTITION 0xEF
 
-typedef struct {
-    uint8_t  Name[8];
-    uint8_t  Extension[3];
-    uint8_t  Attributes;            // READ_ONLY=0x01 HIDDEN=0x02 SYSTEM=0x04 VOLUME_ID=0x08 DIRECTORY=0x10 ARCHIVE=0x20 LFN=READ_ONLY|HIDDEN|SYSTEM|VOLUME_ID
-    uint8_t  Reserved;
-    uint8_t  CreationTimeHundredths;
-    uint16_t CreationTime;          // 5/6/5 bits for hour/minute/second - Multiply seconds by 2
-    uint16_t CreationDate;          // 7/4/5 bits for year/month/day
-    uint16_t LastAccessDate;        // 7/4/5 bits for year/month/day
-    uint16_t FirstClusterHigh;      // FAT32 only (0 for FAT12/16)
-    uint16_t LastWriteTime;         // 5/6/5 bits for hour/minute/second - Multiply seconds by 2
-    uint16_t LastWriteDate;         // 7/4/5 bits for year/month/day
-    uint16_t FirstClusterLow;
-    uint32_t FileSize;
-} __attribute__((packed)) FAT_DirectoryEntry;
+typedef struct
+{
+    uint8_t BootJumpInstruction[3];
+    uint8_t OemIdentifier[8];
+    uint16_t BytesPerSector;
+    uint8_t SectorsPerCluster;
+    uint16_t ReservedSectors;
+    uint8_t FatCount;
+    uint16_t DirEntryCount;
+    uint16_t TotalSectors;
+    uint8_t MediaDescriptorType;
+    uint16_t SectorsPerFat;
+    uint16_t SectorsPerTrack;
+    uint16_t Heads;
+    uint32_t HiddenSectors;
+    uint32_t LargeSectorCount;
 
-typedef struct {
-    uint8_t  SequenceNumber;
-    uint16_t Name1[5];
-    uint8_t  Attributes;
-    uint8_t  Type;
-    uint8_t  Checksum;
-    uint16_t Name2[6];
-    uint16_t ZERO;
-    uint16_t Name3[2];
-} __attribute__((packed)) FAT_ShortFilenameEntry;
+    // extended boot record
+    uint8_t DriveNumber;
+    uint8_t _Reserved;
+    uint8_t Signature;
+    uint32_t VolumeId;          // serial number, value doesn't matter
+    uint8_t VolumeLabel[11];    // 11 bytes, padded with spaces
+    uint8_t SystemId[8];
+} __attribute__((packed)) FAT_BootSector;
+
+typedef struct
+{
+    int Handle;
+    bool IsDirectory;
+    uint32_t Position;
+    uint32_t Size;
+} FAT_File;
 
 typedef struct {
     uint8_t  Jump[3];
@@ -99,6 +106,103 @@ typedef struct {
     uint8_t  BootCode[420];
     uint16_t BootSignature;       // MUST BE 0xAA55
 } __attribute__((packed)) FAT32_EBPB_Bits;
+
+typedef struct
+{
+    uint8_t Buffer[SECTOR_SIZE];
+    FAT_File Public;
+    bool Opened;
+    uint32_t FirstCluster;
+    uint32_t CurrentCluster;
+    uint32_t CurrentSectorInCluster;
+
+} FAT_FileData;
+
+enum FAT_Attributes
+{
+    FAT_ATTRIBUTE_READ_ONLY         = 0x01,
+    FAT_ATTRIBUTE_HIDDEN            = 0x02,
+    FAT_ATTRIBUTE_SYSTEM            = 0x04,
+    FAT_ATTRIBUTE_VOLUME_ID         = 0x08,
+    FAT_ATTRIBUTE_DIRECTORY         = 0x10,
+    FAT_ATTRIBUTE_ARCHIVE           = 0x20,
+    FAT_ATTRIBUTE_LFN               = FAT_ATTRIBUTE_READ_ONLY | FAT_ATTRIBUTE_HIDDEN | FAT_ATTRIBUTE_SYSTEM | FAT_ATTRIBUTE_VOLUME_ID
+};
+
+typedef struct
+{
+    uint8_t BootJumpInstruction[3];
+    uint8_t OemIdentifier[8];
+    uint16_t BytesPerSector;
+    uint8_t SectorsPerCluster;
+    uint16_t ReservedSectors;
+    uint8_t FatCount;
+    uint16_t DirEntryCount;
+    uint16_t TotalSectors;
+    uint8_t MediaDescriptorType;
+    uint16_t SectorsPerFat;
+    uint16_t SectorsPerTrack;
+    uint16_t Heads;
+    uint32_t HiddenSectors;
+    uint32_t LargeSectorCount;
+
+    // extended boot record
+    uint8_t DriveNumber;
+    uint8_t _Reserved;
+    uint8_t Signature;
+    uint32_t VolumeId;          // serial number, value doesn't matter
+    uint8_t VolumeLabel[11];    // 11 bytes, padded with spaces
+    uint8_t SystemId[8];
+} __attribute__((packed)) FAT12_BootSector;
+
+typedef struct
+{
+    union
+    {
+        FAT12_BootSector BootSector;
+        uint8_t BootSectorBytes[SECTOR_SIZE];
+    } BS;
+
+    FAT_FileData RootDirectory;
+
+    FAT_FileData OpenedFiles[MAX_FILE_HANDLES];
+
+} FAT_Data;
+
+typedef enum {
+    FAT12,
+    FAT16,
+    FAT32,
+    ExFAT,
+    Unknown
+} FATType;
+
+typedef struct {
+    uint8_t  Name[8];
+    uint8_t  Extension[3];
+    uint8_t  Attributes;            // READ_ONLY=0x01 HIDDEN=0x02 SYSTEM=0x04 VOLUME_ID=0x08 DIRECTORY=0x10 ARCHIVE=0x20 LFN=READ_ONLY|HIDDEN|SYSTEM|VOLUME_ID
+    uint8_t  Reserved;
+    uint8_t  CreationTimeHundredths;
+    uint16_t CreationTime;          // 5/6/5 bits for hour/minute/second - Multiply seconds by 2
+    uint16_t CreationDate;          // 7/4/5 bits for year/month/day
+    uint16_t LastAccessDate;        // 7/4/5 bits for year/month/day
+    uint16_t FirstClusterHigh;      // FAT32 only (0 for FAT12/16)
+    uint16_t LastWriteTime;         // 5/6/5 bits for hour/minute/second - Multiply seconds by 2
+    uint16_t LastWriteDate;         // 7/4/5 bits for year/month/day
+    uint16_t FirstClusterLow;
+    uint32_t FileSize;
+} __attribute__((packed)) FAT_DirectoryEntry;
+
+typedef struct {
+    uint8_t  SequenceNumber;
+    uint16_t Name1[5];
+    uint8_t  Attributes;
+    uint8_t  Type;
+    uint8_t  Checksum;
+    uint16_t Name2[6];
+    uint16_t ZERO;
+    uint16_t Name3[2];
+} __attribute__((packed)) FAT_ShortFilenameEntry;
 
 typedef struct {
     FAT_BPB_Bits BPB;
@@ -194,8 +298,15 @@ typedef struct {
     uint32_t PartitionEntryArrayCRC32;
 } __attribute__((packed)) GPTHeader;
 
+bool FAT_Initialize(DISK* disk);
+FAT_File * FAT_Open(DISK* disk, const char* path);
+uint32_t FAT_Read(DISK* disk, FAT_File* file, uint32_t byteCount, void* dataOut);
+bool FAT_ReadEntry(DISK* disk, FAT_File* file, FAT_DirectoryEntry* dirEntry);
+void FAT_Close(FAT_File* file);
+void FAT_MakeDirectory(char *name);
+char* get_current_path();
+
 void init_filesystem(void);
-void init_fat_partition(uint32_t partition_start_lba, uint8_t* boot_sector);
 void parse_gpt();
 void parse_mbr(LegacyMBR* mbr);
 FATType get_fat_type(uint32_t total_clusters, uint16_t bytes_per_sector);

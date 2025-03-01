@@ -2,6 +2,7 @@
 #pragma once
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 #include "datastructures.h"
 
 #define STR(x) #x
@@ -19,3 +20,6 @@ char* strpbrk(const char* str, const char* char_set);
 SinglyLinkedList* strsplit(char* src, char delimiter);
 int int_to_hex_str(uint32_t value, char* buffer);
 void int_to_str(int num, char* str, int* len);
+
+bool islower(char chr);
+char toupper(char chr);

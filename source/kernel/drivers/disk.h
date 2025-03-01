@@ -2,11 +2,23 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 
 #define SECTOR_SIZE 512
 
-// From: https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ata/ns-ata-_identify_device_data?redirectedfrom=MSDN
+// From https://github.com/nanobyte-dev/nanobyte_os/blob/videos/part7/src/bootloader/stage2/disk.h
+typedef struct {
+    uint8_t id;
+    uint16_t cylinders;
+    uint16_t sectors;
+    uint16_t heads;
+} DISK;
 
+bool DISK_Initialize(DISK* disk, uint8_t driveNumber);
+bool DISK_ReadSectors(DISK* disk, uint32_t lba, uint8_t sectors, void* lowerDataOut);
+//End of Nanobyte's code
+
+// From: https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ata/ns-ata-_identify_device_data?redirectedfrom=MSDN
 typedef struct {
     uint16_t Reserved1 : 1;
     uint16_t Retired3 : 1;

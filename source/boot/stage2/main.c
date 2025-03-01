@@ -7,7 +7,6 @@
 #include "fat.h"
 #include "memdefs.h"
 #include "memory.h"
-#include "vesa.h"
 
 extern uint32_t vbe_lfb_address;
 

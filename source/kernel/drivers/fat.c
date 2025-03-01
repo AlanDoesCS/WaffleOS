@@ -1,77 +1,25 @@
 // source: https://github.com/nanobyte-dev/nanobyte_os/blob/videos/part7/src/bootloader/stage2/fat.c
 #include "fat.h"
-#include "stdio.h"
-#include "memdefs.h"
-#include "string.h"
-#include "memory.h"
-#include "ctype.h"
 #include <stddef.h>
-#include "minmax.h"
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "../core/stdio.h"
+#include "../core/memdefs.h"
+#include "../libs/string.h"
+#include "../libs/math.h"
+#include "../core/memory.h"
 
 #define SECTOR_SIZE             512
 #define MAX_PATH_SIZE           256
-#define MAX_FILE_HANDLES        10
 #define ROOT_DIRECTORY_HANDLE   -1
+#define FAT_CACHE_SIZE          5
 
-typedef struct
-{
-    uint8_t BootJumpInstruction[3];
-    uint8_t OemIdentifier[8];
-    uint16_t BytesPerSector;
-    uint8_t SectorsPerCluster;
-    uint16_t ReservedSectors;
-    uint8_t FatCount;
-    uint16_t DirEntryCount;
-    uint16_t TotalSectors;
-    uint8_t MediaDescriptorType;
-    uint16_t SectorsPerFat;
-    uint16_t SectorsPerTrack;
-    uint16_t Heads;
-    uint32_t HiddenSectors;
-    uint32_t LargeSectorCount;
-
-    // extended boot record
-    uint8_t DriveNumber;
-    uint8_t _Reserved;
-    uint8_t Signature;
-    uint32_t VolumeId;          // serial number, value doesn't matter
-    uint8_t VolumeLabel[11];    // 11 bytes, padded with spaces
-    uint8_t SystemId[8];
-
-    // ... we don't care about code ...
-
-} __attribute__((packed)) FAT_BootSector;
-
-
-typedef struct
-{
-    uint8_t Buffer[SECTOR_SIZE];
-    FAT_File Public;
-    bool Opened;
-    uint32_t FirstCluster;
-    uint32_t CurrentCluster;
-    uint32_t CurrentSectorInCluster;
-
-} FAT_FileData;
-
-typedef struct
-{
-    union
-    {
-        FAT_BootSector BootSector;
-        uint8_t BootSectorBytes[SECTOR_SIZE];
-    } BS;
-
-    FAT_FileData RootDirectory;
-
-    FAT_FileData OpenedFiles[MAX_FILE_HANDLES];
-
-} FAT_Data;
+static FAT_Filesystem current_filesystem;
 
 static FAT_Data* g_Data;
 static uint8_t* g_Fat = NULL;
 static uint32_t g_DataSectionLba;
-
 
 bool FAT_ReadBootSector(DISK* disk)
 {
@@ -166,7 +114,7 @@ FAT_File* FAT_OpenEntry(DISK* disk, FAT_DirectoryEntry* entry)
     fd->Public.Handle = handle;
     fd->Public.IsDirectory = (entry->Attributes & FAT_ATTRIBUTE_DIRECTORY) != 0;
     fd->Public.Position = 0;
-    fd->Public.Size = entry->Size;
+    fd->Public.Size = entry->FileSize;
     fd->FirstCluster = entry->FirstClusterLow + ((uint32_t)entry->FirstClusterHigh << 16);
     fd->CurrentCluster = fd->FirstCluster;
     fd->CurrentSectorInCluster = 0;
@@ -314,6 +262,10 @@ bool FAT_FindFile(DISK* disk, FAT_File* file, const char* name, FAT_DirectoryEnt
     return false;
 }
 
+void FAT_MakeDirectory(char *name) {
+
+}
+
 FAT_File* FAT_Open(DISK* disk, const char* path)
 {
     char name[MAX_PATH_SIZE];
@@ -369,4 +321,111 @@ FAT_File* FAT_Open(DISK* disk, const char* path)
     }
 
     return current;
+}
+
+void print_guid(const uint8_t *guid) {
+    for (int i = 0; i < 16; i++) {
+        if (guid[i] < 16)
+            printf("0");
+        printf("%x", guid[i]);
+
+        if (i == 3 || i == 5 || i == 7 || i == 9)
+            printf("-");
+    }
+}
+
+
+void parse_guid_partition_table(uint8_t* gpt_sector) {
+}
+
+void init_filesystem(void) {
+    uint8_t boot_sector[SECTOR_SIZE];
+    if (!read_sectors(0, 1, boot_sector)) {    // read boot sector into buffer
+        printf("[FS] Unable to read boot sector\r\n");
+        return;
+    }
+
+    if (boot_sector[510] != 0x55 || boot_sector[511] != 0xAA) {
+        printf("[FS] Invalid boot sector signature\r\n");
+        return;
+    }
+}
+
+void parse_gpt(void) { // TODO: implement
+    return;
+}
+
+void parse_mbr(LegacyMBR* mbr) { // TODO: implement
+    return;
+}
+
+void init_fat_partition(uint32_t partition_start_lba, uint8_t* boot_sector) {
+    // parse BIOS parameter block
+    FAT_BPB_Bits* BPB = (FAT_BPB_Bits*)boot_sector;
+
+    uint32_t total_sectors = (BPB->TotalSectors == 0) ? BPB->SectorCountLarge : BPB->TotalSectors;
+	uint32_t fat_size = (BPB->SectorsPerFat == 0) ? ((FAT32_EBPB_Bits*)(boot_sector + 36))->SectorsPerFat : BPB->SectorsPerFat;
+	uint32_t root_dir_sectors = ((BPB->RootEntries * 32) + (BPB->BytesPerSector - 1)) / BPB->BytesPerSector;
+	uint32_t data_sectors = total_sectors - (BPB->ReservedSectors + (BPB->FATCount * fat_size) + root_dir_sectors);
+
+	if (BPB->SectorsPerCluster == 0) {
+        printf("[FAT] Error: SectorsPerCluster is 0\r\n");
+        return;
+    }
+
+    uint32_t total_clusters = data_sectors / BPB->SectorsPerCluster;
+
+    current_filesystem.type = get_fat_type(total_clusters, BPB->BytesPerSector);
+
+    // store filesystem information depending on type
+    printf("[FAT] Filesystem type: ");
+    switch (current_filesystem.type) {
+        case FAT12:
+            printf("FAT12\r\n");
+            current_filesystem.FAT12_FS.BPB = *BPB;
+            memcpy(&current_filesystem.FAT12_FS.EBPB, boot_sector + 36, sizeof(FAT12_EBPB_Bits));
+            current_filesystem.FAT12_FS.FirstFATSector = BPB->ReservedSectors;
+            current_filesystem.FAT12_FS.RootDirSector = BPB->ReservedSectors + (BPB->FATCount * BPB->SectorsPerFat);
+            current_filesystem.FAT12_FS.FirstDataSector = current_filesystem.FAT12_FS.RootDirSector + root_dir_sectors;
+            current_filesystem.FAT12_FS.RootDirSectors = root_dir_sectors;
+            break;
+        case FAT16:
+            printf("FAT16\r\n");
+            current_filesystem.FAT16_FS.BPB = *BPB;
+            memcpy(&current_filesystem.FAT16_FS.EBPB, boot_sector + 36, sizeof(FAT16_EBPB_Bits));
+            current_filesystem.FAT16_FS.FirstFATSector = BPB->ReservedSectors;
+            current_filesystem.FAT16_FS.RootDirSector = BPB->ReservedSectors + (BPB->FATCount * BPB->SectorsPerFat);
+            current_filesystem.FAT16_FS.FirstDataSector = current_filesystem.FAT16_FS.RootDirSector + root_dir_sectors;
+            current_filesystem.FAT16_FS.RootDirSectors = root_dir_sectors;
+            break;
+        case FAT32:
+            printf("FAT32\r\n");
+            current_filesystem.FAT32_FS.BPB = *BPB;
+            memcpy(&current_filesystem.FAT32_FS.EBPB, boot_sector + 36, sizeof(FAT32_EBPB_Bits));
+            current_filesystem.FAT32_FS.FirstFATSector = BPB->ReservedSectors;
+            current_filesystem.FAT32_FS.RootDirSector = ((FAT32_EBPB_Bits*)(boot_sector + 36))->RootCluster;
+            current_filesystem.FAT32_FS.FirstDataSector = BPB->ReservedSectors + (BPB->FATCount * fat_size);
+            current_filesystem.FAT32_FS.RootDirSectors = 0; // FAT32 has no fixed root dir
+            break;
+        default:
+            printf("Unknown/Unsupported FAT type\r\n");
+            return;
+    }
+
+    printf("[FAT] FAT filesystem initialized\r\n");
+}
+
+char* get_current_path() {
+    return "/";
+}
+
+FATType get_fat_type(uint32_t total_clusters, uint16_t bytes_per_sector) {
+    // ExFAT currently not supported
+    if (total_clusters < 4085) {
+        return FAT12;
+    } else if (total_clusters < 65525) {
+        return FAT16;
+    } else {
+        return FAT32;
+    }
 }

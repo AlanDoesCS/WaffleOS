@@ -36,3 +36,5 @@ x86_outw:
     mov ax, [esp + 8]   ; Load word value to output from stack
     out dx, ax          ; Output the word value to the port
     ret
+
+

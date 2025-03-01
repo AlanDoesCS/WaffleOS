@@ -47,7 +47,72 @@
 
 #define ATA_FLOATING_BUS 0xFF
 
+// TEMP
+bool x86_Disk_GetDriveParams(uint8_t drive,
+                                                    uint8_t* driveTypeOut,
+                                                    uint16_t* cylindersOut,
+                                                    uint16_t* sectorsOut,
+                                                    uint16_t* headsOut) {
+    return false;
+}
+
+bool x86_Disk_Reset(uint8_t drive) {
+    return false;
+}
+
+bool x86_Disk_Read(uint8_t drive, uint16_t cylinder, uint16_t sector, uint16_t head, uint8_t count, void* lowerDataOut) {
+    return false;
+}
+// End TEMP
+
 static uint8_t last_selected_device = ATA_FLOATING_BUS;  // initial value is invalid - No drive
+
+// Start of code from https://github.com/nanobyte-dev/nanobyte_os/blob/videos/part7/src/bootloader/stage2/disk.c
+bool DISK_Initialize(DISK* disk, uint8_t driveNumber)
+{
+    uint8_t driveType;
+    uint16_t cylinders, sectors, heads;
+
+    if (!x86_Disk_GetDriveParams(disk->id, &driveType, &cylinders, &sectors, &heads))
+        return false;
+
+    disk->id = driveNumber;
+    disk->cylinders = cylinders;
+    disk->heads = heads;
+    disk->sectors = sectors;
+
+    return true;
+}
+
+void DISK_LBA2CHS(DISK* disk, uint32_t lba, uint16_t* cylinderOut, uint16_t* sectorOut, uint16_t* headOut)
+{
+    // sector = (LBA % sectors per track + 1)
+    *sectorOut = lba % disk->sectors + 1;
+
+    // cylinder = (LBA / sectors per track) / heads
+    *cylinderOut = (lba / disk->sectors) / disk->heads;
+
+    // head = (LBA / sectors per track) % heads
+    *headOut = (lba / disk->sectors) % disk->heads;
+}
+
+bool DISK_ReadSectors(DISK* disk, uint32_t lba, uint8_t sectors, void* dataOut)
+{
+    uint16_t cylinder, sector, head;
+
+    DISK_LBA2CHS(disk, lba, &cylinder, &sector, &head);
+
+    for (int i = 0; i < 3; i++)
+    {
+        if (x86_Disk_Read(disk->id, cylinder, sector, head, sectors, dataOut))
+            return true;
+
+        x86_Disk_Reset(disk->id);
+    }
+
+    return false;
+}
+// End of code by Nanobyte
 
 uint8_t read_status(void) {
     return x86_inb(ATA_PRIMARY_ALT_STATUS_PORT);

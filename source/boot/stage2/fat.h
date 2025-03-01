@@ -1,7 +1,8 @@
 // source: https://github.com/nanobyte-dev/nanobyte_os/blob/videos/part7/src/bootloader/stage2/fat.h
 #pragma once
-#include <stdint.h>
+#include "stdint.h"
 #include "disk.h"
+#include <stdbool.h>
 
 typedef struct
 {

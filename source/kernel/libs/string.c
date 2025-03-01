@@ -2,6 +2,7 @@
 #include "string.h"
 #include <stdint.h>
 #include <stddef.h>
+#include "../core/stdio.h"
 
 #include "../core/memory.h"
 #include "datastructures.h"
@@ -183,4 +184,14 @@ void int_to_str(int num, char* str, int* len) {
         str[j] = str[i - 1 - j];
         str[i - 1 - j] = temp;
     }
+}
+
+bool islower(char chr)
+{
+    return chr >= 'a' && chr <= 'z';
+}
+
+char toupper(char chr)
+{
+    return islower(chr) ? (chr - 'a' + 'A') : chr;
 }
