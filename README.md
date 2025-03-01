@@ -139,3 +139,28 @@ For linux mint:
               --disable-docbook \
               --with-term --with-sdl2
 ```
+
+# References
+```bibtex
+@misc{nanobyte_os,
+  author       = {Tiberiu C.},
+  title        = {Nanobyte OS},
+  year         = {2024},
+  url          = {https://github.com/nanobyte-dev/nanobyte_os},
+  note         = {Accessed: 2025-03-01}
+}
+@misc{osdev,
+  author       = {{OSDev Community}},
+  title        = {OSDev Wiki},
+  year         = {2025},
+  url          = {https://wiki.osdev.org/Main_Page},
+  note         = {Accessed: 2025-03-01}
+}
+@misc{oslib,
+  author       = {Luca Abeni and Gerardo Lamastra},
+  title        = {The OSLib Project},
+  year         = {2000},
+  url          = {https://oslib.sourceforge.net/overview.html},
+  note         = {Accessed: 2025-03-01}
+}
+```
