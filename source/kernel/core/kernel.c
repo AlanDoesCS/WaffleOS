@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 #include "stdio.h"
 #include "memory.h"
 
@@ -36,7 +37,8 @@ void __attribute__((section(".entry"))) start(uint16_t boot_drive) {
     enable_interrupts();
 
     printf("[KERNEL] Kernel initialisation complete\r\n");
-    while(1) {
+    execute_command("enablegraphics");
+    while(true) {
         printf("root $ ");
         char* input = read_line();
 
@@ -111,31 +113,31 @@ void execute_command(char* command) {
         printf("--- %s ping statistics ---\r\n", target);
         printf("2 packets transmitted, 2 received, 0%% packet loss, time 1001ms\r\n");
     } else if (strcmp(cmd, "enablegraphics") == 0) {
-        // Enable graphics mode
-        enable_graphics();
+        char* mode = NULL;
+        char** mode_ptr = (char**)SinglyLinkedList_Get(args, 1);
+        if (mode_ptr) {
+            mode = *mode_ptr;
+        }
+        enable_graphics_mode(*mode - '0');
+        g_clear_screen();
 
-        g_clrscr(0x0000FF00);  // Clear the screen.
+        //draw_rect(0, 0, 319, 199, LIGHT_BLUE_16);
+        //draw_rect(0, 0, 319, 20, BLUE_16);
+        //draw_line(0, 20, 319, 199, RED_16);
+        //draw_line(319, 20, 0, 199, RED_16);
+        //draw_rect(10, 20, 8, 16, YELLOW_16);
+        draw_scaled_string(30, 20, "G", WHITE_16, 0.7f);
+        draw_scaled_char(10, 20, 'A', RED_16, 2.0f);
+        draw_scaled_char(10, 20, 'B', GREEN_16, 0.5f);
+        //draw_scaled_char(10, 20, 'A', RED_16, 2.0f);
+        draw_scaled_string(30, 30, "H", YELLOW_16, 0.7f);
+        put_pixel(10, 20, RED_16);
+        //draw_string(3, 3, "Welcome to WaffleOS!", YELLOW_16);
+        //draw_scaled_string(100, 150, "Hello, World!", YELLOW_16, 0.5);
 
         while(true) {
             continue;
         }
-        //printf("Made it back safe\r\n");
-
-        /*
-        draw_rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0x00000000);
-
-        // Draw a white line from (100, 100) to (200, 200).
-        draw_line(100, 100, 200, 200, 0x00FFFFFF);
-
-        // Draw a red rectangle at (50, 50) of size 100x80.
-        draw_rect(50, 50, 100, 80, 0x00FF0000);
-
-        // Draw the character 'A' in green at (120, 120).
-        draw_char(120, 120, 'A', 0x0000FF00);
-
-        // Draw a string.
-        draw_string(50, 150, "Hello, World!\nNew line", 0x00FFFFFF);
-         */
     } else {
         // Default case: Print the entered command
         printf("Unrecognised command: %s\r\n", cmd);

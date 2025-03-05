@@ -1,7 +1,7 @@
 # KERNEL MAKEFILE
 # source: https://github.com/nanobyte-dev/nanobyte_os/blob/videos/part7/src/kernel/Makefile
 TARGET_ASMFLAGS += -f elf
-TARGET_CFLAGS += -ffreestanding -nostdlib -D__LINUX__ -Icore # -Wall -Wextra
+TARGET_CFLAGS += -ffreestanding -nostdlib -D__LINUX__ -Icore -I../../include/oslib/lib # -Wall -Wextra
 TARGET_LIBS += -lgcc
 TARGET_LINKFLAGS += -T linker.ld -nostdlib
 

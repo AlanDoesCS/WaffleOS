@@ -2,6 +2,7 @@
 #include "display.h"
 #include <stddef.h>
 #include <stdint.h>
+#include <tgmath.h>
 #include <stdio.h>
 
 #include "../libs/string.h"
@@ -202,38 +203,82 @@ void draw_string(int x, int y, const char *str, uint32_t color) {
 }
 
 // Scaling--------------------------------------------------------------------------------------------------------------
-// These functions are slightly modified in order to support scaling of the font.
+// These functions are slightly modified from the above ones in order to support scaling of the font.
 
-// Draw a single scaled character at (x, y).
-// 'ch' is the character, 'color' is the pixel color, and 'scale' is the scaling factor.
-// NOTE: This function assumes that the character is in the ASCII range 0-127.
-void draw_scaled_char(int x, int y, char ch, uint32_t color, int scale) {
-    uint8_t c = (uint8_t)ch;  // Convert to unsigned value.
-    for (int row = 0; row < 16; row++) {
-        uint8_t bits = font8x16[c][row];
-        for (int col = 0; col < 8; col++) {
-            if (bits & (0x80 >> col)) {
-                // Draw a block of scale x scale pixels for each "on" bit.
-                for (int dy = 0; dy < scale; dy++) {
-                    for (int dx = 0; dx < scale; dx++) {
-                        put_pixel(x + col * scale + dx, y + row * scale + dy, color);
+/**
+* Draw a single scaled character at (x, y) using nearest neighbor sampling
+* This supports both upscaling (scale > 1) and downscaling (scale < 1).
+*
+* @param x The x-coordinate (in pixels) of the top-left corner where the character will be drawn.
+* @param y The y-coordinate (in pixels) of the top-left corner where the character will be drawn.
+* @param ch The ASCII character (in the range 0-127) to be rendered.
+* @param color character colour
+* @param scale The scaling factor applied to the character.
+*              For example, scale = 2.0 enlarges the character to double its size,
+*              while scale = 0.5 downsizes it to half its original dimensions.
+*              The output width becomes (8 * scale) and height becomes (16 * scale).
+*/
+void draw_scaled_char(int x, int y, char ch, uint32_t color, float scale) {
+    uint8_t c = (uint8_t)ch;
+
+    if (scale >= 1.0f) {
+        // Upscaling: replicate each source pixel into a block.
+        int int_scale = (int)scale;  // Assumes scale is an integer when >= 1.
+        for (int row = 0; row < 16; row++) {
+            uint8_t bits = font8x16[c][row];
+            for (int col = 0; col < 8; col++) {
+                if (bits & (0x80 >> col)) {
+                    // Draw a block of size int_scale x int_scale.
+                    for (int dy = 0; dy < int_scale; dy++) {
+                        for (int dx = 0; dx < int_scale; dx++) {
+                            put_pixel(x + col * int_scale + dx, y + row * int_scale + dy, color);
+                        }
                     }
+                }
+            }
+        }
+    } else {
+        int out_width  = (int)ceil(8 * scale);
+        int out_height = (int)ceil(16 * scale);
+        for (int j = 0; j < out_height; j++) {
+            // Map output y coordinate to source using center sampling.
+            int src_y = (int)(((float)j + 0.5f) / scale);
+            if (src_y >= 16) src_y = 15; // safety clamp
+            uint8_t bits = font8x16[c][src_y];
+
+            for (int i = 0; i < out_width; i++) {
+                // Map output x coordinate to source using center sampling.
+                int src_x = (int)(((float)i + 0.5f) / scale);
+                if (src_x >= 8) src_x = 7; // safety clamp
+
+                if (bits & (0x80 >> src_x)) {
+                    put_pixel(x + i, y + j, color);
                 }
             }
         }
     }
 }
 
-// Draw a null-terminated string starting at (x, y) with scaling.
-// NOTE: This function assumes that the character is in the ASCII range 0-127.
-void draw_scaled_string(int x, int y, const char *str, uint32_t color, int scale) {
+/**
+* Draw a null-terminated string starting at (x, y) with scaling.
+* Each character in the string is rendered using draw_scaled_char().
+* Supports newline ('\n') to break lines, resetting x to the original position and incrementing y by the scaled character height.
+*
+* @param x The starting x-coordinate (in pixels) for the string's first character.
+* @param y The starting y-coordinate (in pixels) for the string's first character.
+* @param str A pointer to a null-terminated string containing the text to be rendered.
+* @param color Character colour
+* @param scale The scaling factor applied to each character.
+*/
+void draw_scaled_string(int x, int y, const char *str, uint32_t color, float scale) {
+    int orig_x = x;
     while (*str) {
         if (*str == '\n') {
-            y += 16 * scale;  // Move down by the scaled font height.
-            x = 0;            // Reset to the left margin.
+            y += (int)(16 * scale);
+            x = orig_x;
         } else {
             draw_scaled_char(x, y, *str, color, scale);
-            x += 8 * scale;   // Advance by the scaled font width.
+            x += (int)(8 * scale);
         }
         str++;
     }

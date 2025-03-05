@@ -162,6 +162,7 @@ Many thanks to the following resources for helping me to create WaffleOS, I woul
   url          = {https://oslib.sourceforge.net/overview.html},
   note         = {Accessed: 2025-03-01}
 }
+
 ```
 
 ## License

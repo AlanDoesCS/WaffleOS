@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <float.h>
 #include "vga.h"
 
 extern uint16_t g_SCREEN_WIDTH;
@@ -115,7 +116,7 @@ void draw_smile(int x, int y, uint32_t color);
 // Text rendering routines using an 8x16 bitmap font
 void draw_char(int x, int y, char ch, uint32_t color);
 void draw_string(int x, int y, const char *str, uint32_t color);
-void draw_scaled_char(int x, int y, char ch, uint32_t color, int scale);
-void draw_scaled_string(int x, int y, const char *str, uint32_t color, int scale);
+void draw_scaled_char(int x, int y, char ch, uint32_t color, float scale);
+void draw_scaled_string(int x, int y, const char *str, uint32_t color, float scale);
 
 void vga_test();
