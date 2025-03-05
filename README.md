@@ -124,6 +124,20 @@ These features have NOT YET BEEN IMPLEMENTED (hence WIP)
 - Graphics
     - `graphics -enable/disable` (enables or disables vbe graphics)
 
+# Dependencies
+- `nasm`
+- `gcc` (i686-elf-gcc)
+- bochs
+- OSLib (included) (Luca Abeni and Gerardo Lamastra)
+  - `defs.h`
+  - `hw-data.h`
+  - `hw-instr.h`
+  - `hw-io.h`
+  - `sel.h`
+  - `vm86.c`
+  - `vm86-exc.s`
+  - `x-bios.h`
+
 # References
 Many thanks to the following resources for helping me to create WaffleOS, I would not have been able to do it without them:
 ```bibtex

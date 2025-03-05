@@ -7,6 +7,7 @@
 #include <stddef.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 // Nanobyte's code starts here
 const unsigned SCREEN_WIDTH = 80;

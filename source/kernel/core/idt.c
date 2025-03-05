@@ -1,5 +1,5 @@
 //
-// Interrupt Descriptor Table - Created by Alan on 11/07/2024.
+// Interrupt Descriptor Table
 // Based on: https://wiki.osdev.org/Interrupt_Descriptor_Table
 //
 

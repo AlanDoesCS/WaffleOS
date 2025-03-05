@@ -3,7 +3,8 @@
 #pragma once
 #include <stdint.h>
 #include <stddef.h>
-#include "memory.h"
+#include <stdarg.h>
+#include <memory.h>
 
 // Color Table for VGA text mode
 #define VGA_BLACK 0x0

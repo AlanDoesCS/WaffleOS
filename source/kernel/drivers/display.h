@@ -3,17 +3,52 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include "vga.h"
 
-#define SCREEN_WIDTH   640
-#define SCREEN_HEIGHT  480
-#define BYTES_PER_PIXEL 4    // 4 for 32-bit color (each pixel is 4 bytes)
+extern uint16_t g_SCREEN_WIDTH;
+extern uint16_t g_SCREEN_HEIGHT;
+extern uint16_t g_BYTES_PER_PIXEL;
+
+typedef struct {
+    uint16_t ScreenWidth;
+    uint16_t ScreenHeight;
+    uint16_t BPP; // Bytes per pixel
+} __attribute__((packed)) GraphicsMode;
+
+// Table of graphics modes -------------------------------------------------
+typedef enum {
+    MODE_320x200x1, // 320x200 pixels, 1 bpp
+} GraphicsModeEnum;
+
+static uint8_t* registerInitTable[] = {
+    g_320x200x256,    // 0 (MODE_320x200x4)
+};
+
+static const GraphicsMode graphicsModes[] = {
+    // x, y, words per pixel
+    {320, 200, 1},
+};
+
+// --------------------------------------------------------------------------
+
+typedef struct {
+    uint16_t b : 5;
+    uint16_t g : 6;
+    uint16_t r : 5;
+} __attribute__((packed)) Pixel16;
+
+typedef struct {
+    uint8_t b;
+    uint8_t g;
+    uint8_t r;
+} __attribute__((packed)) Pixel24;
 
 typedef struct {
     uint8_t b;
     uint8_t g;
     uint8_t r;
     uint8_t a;
-} __attribute__((packed)) Pixel;
+} __attribute__((packed)) Pixel32;
 
 // Start of code from: https://wiki.osdev.org/VESA_Video_Modes
 struct VbeInfoBlock {
@@ -65,20 +100,22 @@ typedef struct {
 } __attribute__ ((packed)) VBEModeInfo;
 // end of code from: https://wiki.osdev.org/VESA_Video_Modes
 
-void enable_graphics();  // Set VBE mode 0x4112 (640x480x32)
-
-// Initializes the display driver by setting the framebuffer pointer and pitch.
-// `framebuffer_addr` should be the physical (or identity-mapped virtual) address of video memory.
-// `pitch_val` is the number of bytes per scanline (often SCREEN_WIDTH * BYTES_PER_PIXEL).
-void display_init(uint32_t framebuffer_addr, uint32_t pitch_val);
+void enable_graphics_mode(uint16_t mode);  // 320x200x1 by default
 
 void g_clrscr(uint32_t color); // clear screen in graphics mode
+void g_clear_screen();
 
 // Basic drawing
-void putpixel(int x, int y, uint32_t color);
+void put_pixel(int x, int y, uint32_t color);
 void draw_rect(int x, int y, int width, int height, uint32_t color);
+void draw_rectangle(int x, int y, int width, int height);
 void draw_line(int x1, int y1, int x2, int y2, uint32_t color);
+void draw_smile(int x, int y, uint32_t color);
 
 // Text rendering routines using an 8x16 bitmap font
 void draw_char(int x, int y, char ch, uint32_t color);
 void draw_string(int x, int y, const char *str, uint32_t color);
+void draw_scaled_char(int x, int y, char ch, uint32_t color, int scale);
+void draw_scaled_string(int x, int y, const char *str, uint32_t color, int scale);
+
+void vga_test();

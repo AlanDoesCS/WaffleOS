@@ -1,7 +1,7 @@
 # PROJECT MAKEFILE (based on: https://github.com/nanobyte-dev/nanobyte_os/blob/videos/part7/Makefile)
 include config.mk
 
-.PHONY: all floppy_image kernel bootloader clean bochs lsimgroot hexdumpsector printdirs printinclude always
+.PHONY: all floppy_image kernel bootloader clean bochs lsimgroot hexdumpsector printdirs printinclude always rebuild
 
 all: floppy_image
 
@@ -79,3 +79,8 @@ clean:
 	@$(MAKE) -C source/boot/stage2 BUILD_DIR=$(abspath $(BUILD_DIR)) clean
 	@$(MAKE) -C source/kernel BUILD_DIR=$(abspath $(BUILD_DIR)) clean
 	@rm -rf $(BUILD_DIR)/*
+
+rebuild:
+	$(MAKE) clean
+	$(MAKE) all
+	$(MAKE) bochs
