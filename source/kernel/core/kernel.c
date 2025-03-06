@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <float.h>
 #include "stdio.h"
 #include "memory.h"
 
@@ -8,21 +9,14 @@
 #include "../drivers/floppy.h"
 #include "../drivers/fat.h"
 #include "../libs/string.h"
+#include "../libs/math.h"
 #include "kernel.h"
 
 extern uint8_t __bss_start;
 extern uint8_t __end;
 
-typedef struct BootInfo {
-    uint16_t boot_drive;
-    uint32_t lfb_address;
-} BootInfo;
-
-//void __attribute__((section(".entry"))) start(BootInfo *boot_info) {
 void __attribute__((section(".entry"))) start(uint16_t boot_drive) {
     memset((void*)(&__bss_start), (int)0, (size_t)((&__end) - (&__bss_start)));
-    //display_init(boot_info->lfb_address, SCREEN_WIDTH * BYTES_PER_PIXEL);
-    //g_clrscr(0x55555555);  // Clear the screen.
 
     clrscr();
     print_splash();
@@ -33,6 +27,7 @@ void __attribute__((section(".entry"))) start(uint16_t boot_drive) {
     init_disk();
     //init_filesystem();    // Currently non-functional
     init_keyboard();
+    init_fpu();
 
     enable_interrupts();
 
@@ -121,25 +116,17 @@ void execute_command(char* command) {
         enable_graphics_mode(*mode - '0');
         g_clear_screen();
 
-        //draw_rect(0, 0, 319, 199, LIGHT_BLUE_16);
-        //draw_rect(0, 0, 319, 20, BLUE_16);
-        //draw_line(0, 20, 319, 199, RED_16);
-        //draw_line(319, 20, 0, 199, RED_16);
-        //draw_rect(10, 20, 8, 16, YELLOW_16);
-        draw_scaled_string(30, 20, "G", WHITE_16, 0.7f);
-        draw_scaled_char(10, 20, 'A', RED_16, 2.0f);
-        draw_scaled_char(10, 20, 'B', GREEN_16, 0.5f);
-        //draw_scaled_char(10, 20, 'A', RED_16, 2.0f);
-        draw_scaled_string(30, 30, "H", YELLOW_16, 0.7f);
-        put_pixel(10, 20, RED_16);
-        //draw_string(3, 3, "Welcome to WaffleOS!", YELLOW_16);
-        //draw_scaled_string(100, 150, "Hello, World!", YELLOW_16, 0.5);
-
-        while(true) {
-            continue;
+        draw_rect(0, 0, 319, 199, LIGHT_BLUE_16);
+        draw_rect(0, 0, 319, 20, BLUE_16);
+        draw_line(0, 20, 319, 199, RED_16);
+        draw_line(319, 20, 0, 199, RED_16);
+        draw_string(3, 3, "Welcome to WaffleOS!", YELLOW_16);
+        for (int i = 1; i < 10; i++) {
+            draw_scaled_string(10, 20 + (i * 20), "Lorem ipsum dolor sit amet", RED_16, 1.0f-(0.1f*(i-1)));
         }
+
+        while(true);
     } else {
-        // Default case: Print the entered command
         printf("Unrecognised command: %s\r\n", cmd);
     }
 
@@ -154,25 +141,21 @@ void print_splash(void) {
 
 void cowsay(char* message) {    // TODO: change once string concatenation is improved (requires memory allocation)
     size_t len = strlen(message);
-    size_t width = len + 2; // Padding for spaces around the message
+    size_t width = len + 2; // add padding
 
-    // Print top border of the speech bubble
     printf(" ");
     for (size_t i = 0; i < width; i++) {
         printf("_");
     }
     printf("\n");
 
-    // Print message with borders
     printf("< %s >\n", message);
 
-    // Print bottom border of the speech bubble
     printf(" ");
     for (size_t i = 0; i < width; i++) {
         printf("-");
     }
     printf("\n");
 
-    // print the cow
     printf("        \\   ^__^\r\n         \\  (oo)\\_______\r\n            (__)\\       )\\/\\\r\n                ||----w |\r\n                ||     ||\r\n\r\n", message);;
 }

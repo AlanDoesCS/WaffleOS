@@ -8,7 +8,6 @@ malloc(), calloc() and free() were based on a simplified implementation of a com
 */
 
 #include "memory.h"
-#include "../vm86/hw-data.h"
 
 #include <stdint.h>
 #include <stddef.h>

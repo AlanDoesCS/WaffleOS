@@ -2,20 +2,17 @@
 #include "display.h"
 #include <stddef.h>
 #include <stdint.h>
-#include <tgmath.h>
+#include <math.h>
 #include <stdio.h>
 
 #include "../libs/string.h"
 #include "../core/x86.h"
 #include "../core/memory.h"
-// #include "vbe_switch.h"
 #include "font.h" // contains basic font definitions
 
 uint16_t g_SCREEN_WIDTH = 320;  // Default value, overridden at runtime
 uint16_t g_SCREEN_HEIGHT = 200; // Default value, overridden at runtime
 uint16_t g_BYTES_PER_PIXEL = 1;
-
-static uint32_t vbe_framebuffer;  // will hold the LFB address
 
 // Global variables to hold the framebuffer pointer and pitch.
 static volatile uint8_t *framebuffer = (volatile uint8_t *)0;
@@ -78,11 +75,9 @@ void draw_smile(int x, int y, uint32_t color) {
 
 // Put a single pixel at the specified (x, y) position.
 void put_pixel(int x, int y, uint32_t color) {
-    // Bounds check
     if (x < 0 || x >= g_SCREEN_WIDTH || y < 0 || y >= g_SCREEN_HEIGHT)
         return;
 
-    // If framebuffer is not zero, we can assume we have access to a linear framebuffer
     if (framebuffer) {
         uint32_t offset = y * pitch + x * g_BYTES_PER_PIXEL;
         switch (g_BYTES_PER_PIXEL) {
@@ -96,12 +91,9 @@ void put_pixel(int x, int y, uint32_t color) {
             *(volatile uint32_t*)(framebuffer + offset) = color;
             break;
         default:
-            // Weird pixel format
             break;
         }
     } else {
-        // Fall back to standard VGA mode:
-        // VGA mode is fixed at 320x200 and uses an 8-bit indexed framebuffer at VGA_ADDRESS.
         uint32_t offset = y * g_SCREEN_WIDTH + x;
         ((volatile uint8_t*)VGA_ADDRESS)[offset] = (uint8_t)color;
     }
@@ -190,10 +182,11 @@ void draw_char(int x, int y, char ch, uint32_t color) {
 // Draw a null-terminated string starting at (x, y).
 // NOTE: This function assumes that the character is in the ASCII range 0-127, and does NOT support scaling
 void draw_string(int x, int y, const char *str, uint32_t color) {
+    int orig_x = x;
     while (*str) {
         if (*str == '\n') {
             y += 16;  // Move down by the font height
-            x = 0;    // Reset to the left margin
+            x = orig_x;    // Reset to the left margin
         } else {
             draw_char(x, y, *str, color);
             x += 8;   // Advance by font width
@@ -212,7 +205,7 @@ void draw_string(int x, int y, const char *str, uint32_t color) {
 * @param x The x-coordinate (in pixels) of the top-left corner where the character will be drawn.
 * @param y The y-coordinate (in pixels) of the top-left corner where the character will be drawn.
 * @param ch The ASCII character (in the range 0-127) to be rendered.
-* @param color character colour
+* @param color Character colour
 * @param scale The scaling factor applied to the character.
 *              For example, scale = 2.0 enlarges the character to double its size,
 *              while scale = 0.5 downsizes it to half its original dimensions.
@@ -221,64 +214,60 @@ void draw_string(int x, int y, const char *str, uint32_t color) {
 void draw_scaled_char(int x, int y, char ch, uint32_t color, float scale) {
     uint8_t c = (uint8_t)ch;
 
-    if (scale >= 1.0f) {
-        // Upscaling: replicate each source pixel into a block.
-        int int_scale = (int)scale;  // Assumes scale is an integer when >= 1.
-        for (int row = 0; row < 16; row++) {
-            uint8_t bits = font8x16[c][row];
-            for (int col = 0; col < 8; col++) {
-                if (bits & (0x80 >> col)) {
-                    // Draw a block of size int_scale x int_scale.
-                    for (int dy = 0; dy < int_scale; dy++) {
-                        for (int dx = 0; dx < int_scale; dx++) {
-                            put_pixel(x + col * int_scale + dx, y + row * int_scale + dy, color);
-                        }
-                    }
-                }
-            }
+    // Compute the output height if using the 16-pixel tall font.
+    int scaled_height16 = (int)ceil(16.0f * scale);
+
+    // Decide which font to use: if the height is less than 12, switch to 8x8.
+    bool use_font8x8 = scaled_height16 < 12;
+    int font_height = use_font8x8 ? 8 : 16;
+
+    // Compute scaled dimensions based on the selected font.
+    int scaled_width = (int)ceil(8.0f * scale);
+    int scaled_height = (int)ceil(font_height * scale);
+
+    for (int row = 0; row < scaled_height; row++) {
+        // Map output y coordinate to source using center sampling.
+        int src_y = (int)(((float)row + 0.5f) / scale);
+        if (src_y >= font_height) src_y = font_height - 1;  // Safety clamp
+
+        uint8_t bits;
+        if (use_font8x8) {
+            bits = font8x8_basic[c][src_y];
+        } else {
+            bits = font8x16[c][src_y];
         }
-    } else {
-        int out_width  = (int)ceil(8 * scale);
-        int out_height = (int)ceil(16 * scale);
-        for (int j = 0; j < out_height; j++) {
-            // Map output y coordinate to source using center sampling.
-            int src_y = (int)(((float)j + 0.5f) / scale);
-            if (src_y >= 16) src_y = 15; // safety clamp
-            uint8_t bits = font8x16[c][src_y];
 
-            for (int i = 0; i < out_width; i++) {
-                // Map output x coordinate to source using center sampling.
-                int src_x = (int)(((float)i + 0.5f) / scale);
-                if (src_x >= 8) src_x = 7; // safety clamp
+        for (int col = 0; col < scaled_width; col++) {
+            // Map output x coordinate to source using center sampling.
+            int src_x = (int)(((float)col + 0.5f) / scale);
+            if (src_x >= 8) src_x = 7;  // Safety clamp
 
-                if (bits & (0x80 >> src_x)) {
-                    put_pixel(x + i, y + j, color);
-                }
+            if (bits & (0x80 >> src_x)) {
+                put_pixel(x + col, y + row, color);
             }
         }
     }
 }
 
 /**
-* Draw a null-terminated string starting at (x, y) with scaling.
-* Each character in the string is rendered using draw_scaled_char().
-* Supports newline ('\n') to break lines, resetting x to the original position and incrementing y by the scaled character height.
+* Draw a null-terminated string starting at (x, y) with scaling
 *
-* @param x The starting x-coordinate (in pixels) for the string's first character.
-* @param y The starting y-coordinate (in pixels) for the string's first character.
+* @param x The starting x-coordinate (px) for the string's first character.
+* @param y The starting y-coordinate (px) for the string's first character.
 * @param str A pointer to a null-terminated string containing the text to be rendered.
 * @param color Character colour
 * @param scale The scaling factor applied to each character.
 */
 void draw_scaled_string(int x, int y, const char *str, uint32_t color, float scale) {
     int orig_x = x;
+
     while (*str) {
         if (*str == '\n') {
-            y += (int)(16 * scale);
+            y += (int)(16.0f * scale);
             x = orig_x;
         } else {
             draw_scaled_char(x, y, *str, color, scale);
-            x += (int)(8 * scale);
+            x += (int)(8.0f * scale);
         }
         str++;
     }

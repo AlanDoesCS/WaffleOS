@@ -13,6 +13,7 @@
  * from: @(#)fdlibm.h 5.1 93/09/24
  * $\Id: math.h,v 1.2 1995/05/30 05:49:16 rgrimes Exp $
  */
+#pragma once
 
 #ifndef _MATH_H_
 #define _MATH_H_

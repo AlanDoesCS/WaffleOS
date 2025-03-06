@@ -35,4 +35,4 @@ def print_dirs(directory, prefix="", is_top_level=True):
                 print(prefix + connector + entry)
 
 if __name__ == '__main__':
-    print_dirs('..')
+    print_dirs('../WaffleOS')

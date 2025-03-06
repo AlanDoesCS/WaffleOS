@@ -1,8 +1,8 @@
 # KERNEL MAKEFILE
 # source: https://github.com/nanobyte-dev/nanobyte_os/blob/videos/part7/src/kernel/Makefile
 TARGET_ASMFLAGS += -f elf
-TARGET_CFLAGS += -ffreestanding -nostdlib -D__LINUX__ -Icore -I../../include/oslib/lib # -Wall -Wextra
-TARGET_LIBS += -lgcc
+TARGET_CFLAGS += -ffreestanding -nostdlib -D__LINUX__ -Icore -I../../external/oslib -I../../external/oslib/ll -I../../external/oslib/libm/msun/src # -Wall -Wextra
+TARGET_LIBS += -L../../external/oslib/lib -lhm -lgcc
 TARGET_LINKFLAGS += -T linker.ld -nostdlib
 
 SOURCES_C   := $(patsubst ./%,%,$(shell find . -type f -name '*.c'))

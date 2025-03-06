@@ -8,6 +8,7 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <float.h>
 
 // Nanobyte's code starts here
 const unsigned SCREEN_WIDTH = 80;
@@ -172,6 +173,28 @@ void printf_signed(long long number, int radix)
     else printf_unsigned(number, radix);
 }
 
+void printf_float(double number) {
+    // negative numbers
+    if (number < 0) {
+        putc('-');
+        number = -number;
+    }
+
+    // extract integer part
+    int int_part = (int)number;
+    double frac_part = number - int_part;
+    printf_unsigned(int_part, 10);
+    putc('.');
+
+    // extract fractional part
+    for (int i = 0; i < 6; i++) {
+        frac_part *= 10;
+        int digit = (int)frac_part;
+        putc('0' + digit);
+        frac_part -= digit;
+    }
+}
+
 #define PRINTF_STATE_NORMAL         0
 #define PRINTF_STATE_LENGTH         1
 #define PRINTF_STATE_LENGTH_SHORT   2
@@ -184,6 +207,8 @@ void printf_signed(long long number, int radix)
 #define PRINTF_LENGTH_LONG          3
 #define PRINTF_LENGTH_LONG_LONG     4
 
+// Adjustments:
+// Added support for floating point numbers
 void printf(const char* fmt, ...)
 {
     va_list args;
@@ -268,6 +293,12 @@ void printf(const char* fmt, ...)
 
                     case 'o':   radix = 8; sign = false; number = true;
                                 break;
+
+                    case 'f': {
+                                double f = va_arg(args, double);
+                                printf_float(f);
+                                break;
+                    }
 
                     // ignore invalid spec
                     default:    break;

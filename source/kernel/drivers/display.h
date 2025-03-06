@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <math.h>
 #include <float.h>
 #include "vga.h"
 
@@ -118,5 +119,3 @@ void draw_char(int x, int y, char ch, uint32_t color);
 void draw_string(int x, int y, const char *str, uint32_t color);
 void draw_scaled_char(int x, int y, char ch, uint32_t color, float scale);
 void draw_scaled_string(int x, int y, const char *str, uint32_t color, float scale);
-
-void vga_test();
