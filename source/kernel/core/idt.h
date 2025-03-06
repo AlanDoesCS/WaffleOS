@@ -1,5 +1,5 @@
 //
-// Interrupt Descriptor Table - Created by Alan on 11/07/2024.
+// Interrupt Descriptor Table
 // Based on: https://wiki.osdev.org/Interrupt_Descriptor_Table
 //
 
@@ -23,14 +23,6 @@ typedef enum
     IDT_FLAG_PRESENT                = 0x80,
 
 } IDT_FLAGS; // source: https://github.com/nanobyte-dev/nanobyte_os/blob/videos/part8/src/kernel/arch/i686/idt.h
-
-struct InterruptDescriptor32 {
-    uint16_t offset_lowerbits;   // offset bits 0..15
-    uint16_t selector;           // a code segment selector in GDT
-    uint8_t zero;                    // unused, set to 0
-    uint8_t type_attributes;         // gate type, dpl, and p fields
-    uint16_t offset_higherbits;  // offset bits 16..31
-} __attribute__((packed));
 
 void enable_interrupts(void);
 void disable_interrupts(void);

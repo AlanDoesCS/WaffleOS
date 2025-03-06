@@ -51,6 +51,7 @@ void mouse_handler(void) {
 
     // Signal end of interrupt for IRQ 12.
     send_eoi(12);
+    printf("Mouse: x=%d, y=%d, buttons=%d\r\n", mouse_state.x, mouse_state.y, mouse_state.buttons);
 }
 
 // Initialize the PS/2 mouse.

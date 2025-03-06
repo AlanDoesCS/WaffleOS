@@ -1,4 +1,5 @@
-// A basic keyboar driver for reading input from the user
+// A basic keyboard driver for reading input from the user
+// Using inforamtion from: https://wiki.osdev.org/PS/2_Keyboard
 
 #include <stdint.h>
 #include <stddef.h>
@@ -74,7 +75,6 @@ void init_keyboard(void) {
 
     register_interrupt_handler(33, (uint32_t)irq1);
 
-    // enable keyboard IRQ
     enable_irq(1);
 
     printf("[I/O] Keyboard initialized\r\n");
