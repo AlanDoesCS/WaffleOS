@@ -14,9 +14,26 @@ uint16_t g_SCREEN_WIDTH = 320;  // Default value, overridden at runtime
 uint16_t g_SCREEN_HEIGHT = 200; // Default value, overridden at runtime
 uint16_t g_BYTES_PER_PIXEL = 1;
 
-// Global variables to hold the framebuffer pointer and pitch.
+// Global variables ----------------------------------------------------------------------------------------------------
 static volatile uint8_t *framebuffer = (volatile uint8_t *)0;
 static uint32_t pitch;
+static volatile uint8_t *current_target = NULL;
+
+// Helper functions ----------------------------------------------------------------------------------------------------
+
+uint8_t *display_get_framebuffer() {
+    return (uint8_t *)framebuffer;
+}
+
+void set_drawing_target(uint8_t *target) {
+    current_target = target;
+}
+
+static inline volatile uint8_t* get_drawing_target() {
+    return current_target ? current_target : framebuffer;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
 
 void enable_graphics_mode(uint16_t mode) {
     framebuffer = (volatile uint8_t*)VGA_ADDRESS;
@@ -47,11 +64,7 @@ void g_clrscr(uint32_t color) {
 }
 
 void g_clear_screen() {
-    for (int y = 0; y < g_SCREEN_HEIGHT; y++) {
-        for (int x = 0; x < g_SCREEN_WIDTH; x++) {
-            put_pixel(x, y, BLACK_16);
-        }
-    }
+    g_clrscr(BLACK_16);
 }
 
 void draw_smile(int x, int y, uint32_t color) {
@@ -78,17 +91,20 @@ void put_pixel(int x, int y, uint32_t color) {
     if (x < 0 || x >= g_SCREEN_WIDTH || y < 0 || y >= g_SCREEN_HEIGHT)
         return;
 
-    if (framebuffer) {
+    // Use current_target if set; otherwise, fallback to the framebuffer.
+    volatile uint8_t *target = current_target ? current_target : framebuffer;
+
+    if (target) {
         uint32_t offset = y * pitch + x * g_BYTES_PER_PIXEL;
         switch (g_BYTES_PER_PIXEL) {
         case 1:
-            ((volatile uint8_t*)framebuffer)[offset] = (uint8_t)color;
+            ((volatile uint8_t*)target)[offset] = (uint8_t)color;
             break;
         case 2:
-            *(volatile uint16_t*)(framebuffer + offset) = (uint16_t)color;
+            *(volatile uint16_t*)(target + offset) = (uint16_t)color;
             break;
         case 4:
-            *(volatile uint32_t*)(framebuffer + offset) = color;
+            *(volatile uint32_t*)(target + offset) = color;
             break;
         default:
             break;
@@ -98,7 +114,6 @@ void put_pixel(int x, int y, uint32_t color) {
         ((volatile uint8_t*)VGA_ADDRESS)[offset] = (uint8_t)color;
     }
 }
-
 
 // Draw a filled rectangle at (x, y) with width and height, in the specified color.
 void draw_rect(int x, int y, int width, int height, uint32_t color) {
@@ -112,9 +127,12 @@ void draw_rect(int x, int y, int width, int height, uint32_t color) {
     if (width <= 0 || height <= 0)
         return;
 
+    // Use the current drawing target.
+    volatile uint8_t *target = get_drawing_target();
+
     for (int j = 0; j < height; j++) {
         uint32_t offset = (y + j) * pitch + x * g_BYTES_PER_PIXEL;
-        volatile uint8_t *row_ptr = framebuffer + offset;
+        volatile uint8_t *row_ptr = target + offset;
 
         if (g_BYTES_PER_PIXEL == 1) {
             for (int i = 0; i < width; i++) {
@@ -131,21 +149,12 @@ void draw_rect(int x, int y, int width, int height, uint32_t color) {
                 pixel_ptr[i] = color;
             }
         } else {
-            // Fallback: use VGA_ADDRESS
+            // Fallback: use VGA_ADDRESS if all else fails.
             uint32_t offset = y * g_SCREEN_WIDTH + x;
             ((volatile uint8_t*)VGA_ADDRESS)[offset] = (uint8_t)color;
         }
     }
 }
-
-void draw_rectangle(int x, int y, int width, int height) {
-    for (int i = 0; i < width; i++) {
-        for (int j = 0; j < height; j++) {
-            put_pixel(x+i, y+j, GREEN_16);
-        }
-    }
-}
-
 
 // draw_line: Draw a line from (x1, y1) to (x2, y2) in the given color using Bresenham's algorithm.
 void draw_line(int x1, int y1, int x2, int y2, uint32_t color) {

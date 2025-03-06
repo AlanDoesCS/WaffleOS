@@ -5,12 +5,13 @@
 #include "stdio.h"
 #include "memory.h"
 
+#include "kernel.h"
 #include "../drivers/display.h"
 #include "../drivers/floppy.h"
 #include "../drivers/fat.h"
 #include "../libs/string.h"
 #include "../libs/math.h"
-#include "kernel.h"
+#include "../libs/gui.h"
 
 extern uint8_t __bss_start;
 extern uint8_t __end;
@@ -27,12 +28,12 @@ void __attribute__((section(".entry"))) start(uint16_t boot_drive) {
     init_disk();
     //init_filesystem();    // Currently non-functional
     init_keyboard();
+    init_mouse();
     init_fpu();
 
     enable_interrupts();
 
     printf("[KERNEL] Kernel initialisation complete\r\n");
-    execute_command("enablegraphics");
     while(true) {
         printf("root $ ");
         char* input = read_line();
@@ -115,17 +116,11 @@ void execute_command(char* command) {
         }
         enable_graphics_mode(*mode - '0');
         g_clear_screen();
+        init_gui();
 
-        draw_rect(0, 0, 319, 199, LIGHT_BLUE_16);
-        draw_rect(0, 0, 319, 20, BLUE_16);
-        draw_line(0, 20, 319, 199, RED_16);
-        draw_line(319, 20, 0, 199, RED_16);
-        draw_string(3, 3, "Welcome to WaffleOS!", YELLOW_16);
-        for (int i = 1; i < 10; i++) {
-            draw_scaled_string(10, 20 + (i * 20), "Lorem ipsum dolor sit amet", RED_16, 1.0f-(0.1f*(i-1)));
+        while(true) {
+            render_gui();
         }
-
-        while(true);
     } else {
         printf("Unrecognised command: %s\r\n", cmd);
     }

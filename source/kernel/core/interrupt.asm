@@ -5,6 +5,8 @@ global irq1
 extern keyboard_handler
 global irq6
 extern floppy_handler
+global irq12
+extern mouse_handler
 
 section .text
 
@@ -34,5 +36,13 @@ irq6:
     pushad
     cld
     call floppy_handler
+    popad
+    iretd
+
+; IRQ12 is the PS/2 mouse
+irq12:
+    pushad
+    cld
+    call mouse_handler
     popad
     iretd

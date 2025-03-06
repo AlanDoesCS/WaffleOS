@@ -7,7 +7,6 @@
 extern const uint8_t font8x16[128][16];
 extern const uint8_t font8x8_basic[128][8];
 extern const uint8_t font8x8_block[32][8];
-extern const uint8_t fontTomThumb[204][8];
 
 // Font style structure
 typedef struct {
@@ -20,6 +19,5 @@ typedef struct {
 extern FontStyle FontStyle_8x16;
 extern FontStyle FontStyle_8x8_Basic;
 extern FontStyle FontStyle_8x8_Block;
-extern FontStyle FontStyle_TomThumb;
 
 

@@ -2,6 +2,7 @@
 
 #include "idt.h"
 #include "../drivers/keyboard.h"
+#include "../drivers/mouse.h"
 #include "../libs/string.h"
 #include "../drivers/fat.h"
 #include "../drivers/disk.h"

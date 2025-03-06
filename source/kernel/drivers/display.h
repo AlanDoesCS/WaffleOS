@@ -104,13 +104,15 @@ typedef struct {
 
 void enable_graphics_mode(uint16_t mode);  // 320x200x1 by default
 
+uint8_t *display_get_framebuffer(); // get the framebuffer pointer
+void set_drawing_target(uint8_t *target); // set the drawing target
+
 void g_clrscr(uint32_t color); // clear screen in graphics mode
 void g_clear_screen();
 
 // Basic drawing
 void put_pixel(int x, int y, uint32_t color);
 void draw_rect(int x, int y, int width, int height, uint32_t color);
-void draw_rectangle(int x, int y, int width, int height);
 void draw_line(int x1, int y1, int x2, int y2, uint32_t color);
 void draw_smile(int x, int y, uint32_t color);
 
