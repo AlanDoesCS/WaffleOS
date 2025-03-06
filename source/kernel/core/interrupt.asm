@@ -13,6 +13,7 @@ load_idt:
     lidt [edx]
     ret
 
+; IRQ0 is the PIT
 irq0:
     pushad
     cld
@@ -20,6 +21,7 @@ irq0:
     popad
     iretd
 
+; IRQ1 is the keyboard
 irq1:
     pushad
     cld
@@ -27,9 +29,10 @@ irq1:
     popad
     iretd
 
+; IRQ6 is the floppy drive
 irq6:
     pushad
     cld
-    call keyboard_handler
+    call floppy_handler
     popad
     iretd
