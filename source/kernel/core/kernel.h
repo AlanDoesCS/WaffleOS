@@ -1,5 +1,6 @@
 #pragma once
 
+#include "hal.h"
 #include "idt.h"
 #include "../drivers/keyboard.h"
 #include "../drivers/mouse.h"

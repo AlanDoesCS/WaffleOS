@@ -12,6 +12,7 @@
 #include "../libs/string.h"
 #include "../libs/math.h"
 #include "../libs/gui.h"
+#include "x86.h"
 
 extern uint8_t __bss_start;
 extern uint8_t __end;
@@ -21,14 +22,14 @@ void __attribute__((section(".entry"))) start(uint16_t boot_drive) {
 
     clrscr();
     print_splash();
-
+    init_hal();
     init_memory();
     init_idt();
     init_pit();
     init_disk();
     //init_filesystem();    // Currently non-functional
     init_keyboard();
-    init_mouse();
+    //init_mouse();
     init_fpu();
 
     enable_interrupts();
@@ -53,7 +54,9 @@ void execute_command(char* command) {
         cmd = *cmd_ptr;
     }
 
-    if (strcmp(cmd, "clear") == 0) {
+    if (strcmp(cmd, "crashme") == 0) {
+        crash_me();
+    } else if (strcmp(cmd, "clear") == 0) {
         clrscr();
         return;
     } else if (strcmp(cmd, "help") == 0) {

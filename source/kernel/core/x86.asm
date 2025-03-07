@@ -37,4 +37,18 @@ x86_outw:
     out dx, ax          ; Output the word value to the port
     ret
 
+; i686_Panic and crash_me are from: https://github.com/nanobyte-dev/nanobyte_os/blob/videos/part9/src/kernel/arch/i686/io.asm
+global i686_Panic
+i686_Panic:
+    cli
+    hlt
+
+global crash_me
+crash_me:
+    ; div by 0
+    ; mov ecx, 0x1337
+    ; mov eax, 0
+    ; div eax
+    int 0x80
+    ret
 

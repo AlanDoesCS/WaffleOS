@@ -66,7 +66,10 @@ void disable_interrupts(void) {
 }
 
 void send_eoi(int irq) { // end of interrupt signal
-    x86_outb(0x20, 0x20);
+    if (irq >= 8) {
+        x86_outb(PIC2_CMD_PORT, PIC_EOI);  // Send EOI to slave PIC
+    }
+    x86_outb(PIC1_CMD_PORT, PIC_EOI);      // Always send EOI to master PIC
 }
 
 void init_idt(void) {
@@ -120,9 +123,9 @@ void enable_irq(uint8_t irq) {
     uint8_t value;
 
     if (irq < 8) {    // master PIC (IRQ 0-7)
-        port = 0x21;
+        port = PIC1_DATA_PORT;
     } else {          // slave PIC (IRQ 8-15)
-        port = 0xA1;
+        port = PIC2_DATA_PORT;
         irq -= 8;
     }
 

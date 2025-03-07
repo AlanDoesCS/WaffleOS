@@ -58,13 +58,13 @@ typedef enum
 #define GDT_FLAGS_LIMIT_HI(limit, flags)    (((limit >> 16) & 0xF) | (flags & 0xF0))
 #define GDT_BASE_HIGH(base)                 ((base >> 24) & 0xFF)
 
-#define GDT_ENTRY(base, limit, access, flags) {                     \
-    GDT_LIMIT_LOW(limit),                                           \
-    GDT_BASE_LOW(base),                                             \
-    GDT_BASE_MIDDLE(base),                                          \
-    access,                                                         \
-    GDT_FLAGS_LIMIT_HI(limit, flags),                               \
-    GDT_BASE_HIGH(base)                                             \
+#define GDT_ENTRY(base, limit, access, flags) {    \
+    GDT_LIMIT_LOW(limit),                          \
+    GDT_BASE_LOW(base),                            \
+    GDT_BASE_MIDDLE(base),                         \
+    access,                                        \
+    GDT_FLAGS_LIMIT_HI(limit, flags),              \
+    GDT_BASE_HIGH(base)                            \
 }
 
 GDTEntry g_GDT[] = {
