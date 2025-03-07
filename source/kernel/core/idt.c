@@ -94,8 +94,8 @@ void init_idt(void) {
 #define ALL_IRQ_MASK 0xFF
 void init_pic(void) { // remap PIC
     // Start the initialization sequence for both PICs
-    x86_outb(0x20, 0x11);
-    x86_outb(0xA0, 0x11);
+    x86_outb(PIC1_CMD_PORT, 0x11);
+    x86_outb(PIC2_CMD_PORT, 0x11);
     // Set the offsets for the PICs
     x86_outb(PIC1_DATA_PORT, 0x20);
     x86_outb(PIC2_DATA_PORT, 0x28);

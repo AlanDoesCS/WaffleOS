@@ -24,7 +24,9 @@ typedef enum
 
 } IDT_FLAGS; // source: https://github.com/nanobyte-dev/nanobyte_os/blob/videos/part8/src/kernel/arch/i686/idt.h
 
+#define PIC1_CMD_PORT 0x20
 #define PIC1_DATA_PORT 0x21
+#define PIC2_CMD_PORT 0xA0
 #define PIC2_DATA_PORT 0xA1
 
 #define IRQ2_BIT (1 << 2)
