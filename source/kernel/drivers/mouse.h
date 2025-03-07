@@ -5,6 +5,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+// PS/2 ports for mouse.
+#define MOUSE_DATA_PORT    0x60
+#define MOUSE_STATUS_PORT  0x64
+
 // Mouse state struct
 typedef struct {
     int x;            // Current x pos
@@ -14,8 +18,5 @@ typedef struct {
 
 extern volatile MouseState mouse_state;
 
-// Initialize the mouse.
 void init_mouse(void);
-
-// Mouse interrupt handler.
 void mouse_handler(void);

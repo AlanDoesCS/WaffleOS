@@ -10,6 +10,7 @@
 #include "stdio.h"
 #include "kernel.h"
 #include "x86.h"
+#include "gdt.h"
 
 #include <utils/binary.h>
 
@@ -90,19 +91,28 @@ void init_idt(void) {
     init_pic();
 }
 
+#define ALL_IRQ_MASK 0xFF
 void init_pic(void) { // remap PIC
+    // Start the initialization sequence for both PICs
     x86_outb(0x20, 0x11);
     x86_outb(0xA0, 0x11);
-    x86_outb(0x21, 0x20);
-    x86_outb(0xA1, 0x28);
-    x86_outb(0x21, 0x04);
-    x86_outb(0xA1, 0x02);
-    x86_outb(0x21, 0x01);
-    x86_outb(0xA1, 0x01);
+    // Set the offsets for the PICs
+    x86_outb(PIC1_DATA_PORT, 0x20);
+    x86_outb(PIC2_DATA_PORT, 0x28);
+    // Tell the PICs about their cascade
+    x86_outb(PIC1_DATA_PORT, 0x04);    // master
+    x86_outb(PIC2_DATA_PORT, 0x02);    // slave
+    // Set PICs to operate in 8086/88 mode
+    x86_outb(PIC1_DATA_PORT, 0x01);
+    x86_outb(PIC2_DATA_PORT, 0x01);
 
-    // disable all IRQs
-    x86_outb(0x21, 0xFF);
-    x86_outb(0xA1, 0xFF);
+    // Mask all IRQs except IRQ2 (cascade)
+    uint8_t master_mask = ALL_IRQ_MASK;
+    FLAG_UNSET(master_mask, IRQ2_BIT); // This clears bit 2 (IRQ2) so that it is unmasked.
+    x86_outb(PIC1_DATA_PORT, master_mask);
+
+    // Leave the slave PIC fully masked until you explicitly enable needed IRQs.
+    x86_outb(PIC2_DATA_PORT, ALL_IRQ_MASK);
 }
 
 void enable_irq(uint8_t irq) {
@@ -123,11 +133,7 @@ void enable_irq(uint8_t irq) {
 }
 
 void register_interrupt_handler(uint8_t interrupt_number, uint32_t handler_address) {
-    g_IDT[interrupt_number].BaseLow = handler_address & 0xFFFF;
-    g_IDT[interrupt_number].SegmentSelector = 0x08; // Code segment selector
-    g_IDT[interrupt_number].Reserved = 0;
-    g_IDT[interrupt_number].Flags = 0x8E;
-    g_IDT[interrupt_number].BaseHigh = (handler_address >> 16) & 0xFFFF;
-
-    printf("[IDT] Registered interrupt handler for IRQ %d\r\n", interrupt_number-32);
+    i686_IDT_SetGate(interrupt_number, (void*)handler_address, i686_GDT_CODE_SEGMENT,
+                     IDT_FLAG_PRESENT | IDT_FLAG_RING0 | IDT_FLAG_GATE_32BIT_INT);
+    printf("[IDT] Registered interrupt handler for IRQ %d\r\n", interrupt_number - 32);
 }
