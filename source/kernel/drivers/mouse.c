@@ -16,6 +16,7 @@ volatile MouseState mouse_state = { .x = 160, .y = 100, .buttons = 0 };
 // Vars to accumulate the 3 byte mouse packet
 static uint8_t mouse_cycle = 0;
 static uint8_t mouse_bytes[3];
+static uint8_t mouse_id = 0x00;
 
 extern void irq12(void);
 
@@ -77,7 +78,7 @@ void mouse_handler(void)
         int8_t x_move = (int8_t)mouse_bytes[1];
         int8_t y_move = (int8_t)mouse_bytes[2];
         mouse_state.x += x_move;
-        mouse_state.y += y_move;
+        mouse_state.y -= y_move;
         mouse_cycle = 0;
     }
 
@@ -109,6 +110,7 @@ int init_mouse(void)
         printf("[MOUSE] Mouse reset failed (ACK not received).\r\n");
         return -1;
     }
+
     uint8_t self_test = mouse_read();
     if (self_test != MOUSE_SELF_TEST_PASS) {
         printf("[MOUSE] Mouse self-test failed.\r\n");
@@ -117,8 +119,11 @@ int init_mouse(void)
 
     // Set the mouse to its default settings.
     mouse_write(MOUSE_CMD_SET_DEFAULTS);
-    if (mouse_read() != MOUSE_ACK) {
-    	printf("[MOUSE] Failed to set defaults.\r\n");
+    mouse_id = mouse_read();
+
+    uint8_t defaults_ack = mouse_read();
+    if (defaults_ack != MOUSE_ACK) {
+    	printf("[MOUSE] Failed to set defaults. Received: 0x%x\r\n", defaults_ack);
         return -1;
     }
 
@@ -130,7 +135,7 @@ int init_mouse(void)
     }
 
     // Register the mouse interrupt handler.
-    // IRQ 12 is remapped to interrupt number 44 (32 + 12)
+    // IRQ 12 is remapped to interrupt number 44
     register_interrupt_handler(32 + 12, (uint32_t)irq12);
     enable_irq(12);
 

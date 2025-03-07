@@ -1,5 +1,5 @@
 // A basic keyboard driver for reading input from the user
-// Using inforamtion from: https://wiki.osdev.org/PS/2_Keyboard
+// Using information from: https://wiki.osdev.org/PS/2_Keyboard
 
 #include <stdint.h>
 #include <stddef.h>

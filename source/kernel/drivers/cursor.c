@@ -9,9 +9,9 @@ static const char *cursor_shape[8] = {
     "X.X     ",
     "X..X    ",
     "X...X   ",
-    "X....X  ",
-    "X.....X ",
-    "XXXXXXXX"
+    "X.XXXX  ",
+    "XX      ",
+    "X       "
 };
 
 
