@@ -74,7 +74,6 @@ void init_keyboard(void) {
     printf("[I/O] Initializing keyboard...\r\n");
 
     register_interrupt_handler(33, (uint32_t)irq1);
-
     enable_irq(1);
 
     printf("[I/O] Keyboard initialized\r\n");

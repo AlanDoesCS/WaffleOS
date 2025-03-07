@@ -125,13 +125,14 @@ int init_mouse(void)
     // Enable data reporting.
     mouse_write(MOUSE_CMD_ENABLE);
     if (mouse_read() != MOUSE_ACK) {
-        printf("[MOUSE] Failed to enable data reporting.\n");
+        printf("[MOUSE] Failed to enable data reporting.\r\n");
         return -1;
     }
 
     // Register the mouse interrupt handler.
     // IRQ 12 is remapped to interrupt number 44 (32 + 12)
     register_interrupt_handler(32 + 12, (uint32_t)irq12);
+    enable_irq(12);
 
     printf("[MOUSE] Mouse driver installed.\r\n");
     return 0; // Success

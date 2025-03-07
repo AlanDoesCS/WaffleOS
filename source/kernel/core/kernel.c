@@ -28,10 +28,10 @@ void __attribute__((section(".entry"))) start(uint16_t boot_drive) {
     init_memory();
     init_pit();
     init_disk();
-    //init_filesystem();    // Currently non-functional
+    //init_filesystem(); // Currently non-functional
     init_keyboard();
-    //init_mouse();
-    init_fpu();
+    init_mouse();
+    //init_fpu(); // Throws "Unhandled interrupt 39!"
 
     enable_interrupts();
 
