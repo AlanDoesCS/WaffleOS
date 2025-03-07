@@ -1,7 +1,7 @@
 # PROJECT MAKEFILE (based on: https://github.com/nanobyte-dev/nanobyte_os/blob/videos/part7/Makefile)
 include config.mk
 
-.PHONY: all floppy_image kernel bootloader clean bochs lsimgroot hexdumpsector printdirs printinclude always rebuild
+.PHONY: all floppy_image kernel bootloader clean bochs qemu lsimgroot hexdumpsector printdirs printinclude always rebuild
 
 all: floppy_image
 
@@ -58,6 +58,9 @@ always:
 #
 bochs:
 	@bochs -f .bochsrc -q
+
+qemu:
+	@qemu-system-i386 -fda build/main_floppy.img
 
 lsimgroot:
 	mdir -i $(BUILD_DIR)/main_floppy.img

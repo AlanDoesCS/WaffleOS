@@ -17,6 +17,8 @@
 extern uint8_t __bss_start;
 extern uint8_t __end;
 
+void crash_me();
+
 void __attribute__((section(".entry"))) start(uint16_t boot_drive) {
     memset((void*)(&__bss_start), (int)0, (size_t)((&__end) - (&__bss_start)));
 
@@ -24,7 +26,6 @@ void __attribute__((section(".entry"))) start(uint16_t boot_drive) {
     print_splash();
     init_hal();
     init_memory();
-    init_idt();
     init_pit();
     init_disk();
     //init_filesystem();    // Currently non-functional

@@ -73,7 +73,6 @@ void send_eoi(int irq) { // end of interrupt signal
 }
 
 void init_idt(void) {
-
     printf("[IDT] Initializing IDT...\r\n");
 
     for (int i = 0; i < IDT_SIZE; i++) {

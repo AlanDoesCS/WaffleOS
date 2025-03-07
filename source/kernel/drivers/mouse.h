@@ -6,8 +6,17 @@
 #include <stdbool.h>
 
 // PS/2 ports for mouse.
-#define MOUSE_DATA_PORT    0x60
-#define MOUSE_STATUS_PORT  0x64
+#define MOUSE_DATA_PORT			0x60
+#define MOUSE_STATUS_PORT		0x64
+
+#define PS2_CMD_ENABLE_MOUSE	0xA8
+#define PS2_CMD_READ_CONFIG		0x20
+#define PS2_CMD_WRITE_CONFIG	0x60
+#define MOUSE_CMD_SET_DEFAULTS	0xF6
+#define MOUSE_CMD_ENABLE		0xF4
+#define MOUSE_CMD_RESET			0xFF
+#define MOUSE_ACK				0xFA
+#define MOUSE_SELF_TEST_PASS	0xAA
 
 // Mouse state struct
 typedef struct {
@@ -18,5 +27,11 @@ typedef struct {
 
 extern volatile MouseState mouse_state;
 
-void init_mouse(void);
+/*
+* Initialize the mouse driver.
+* Return codes:
+* `0`:	Success
+* `-1`:	Failure
+ */
+int init_mouse(void);
 void mouse_handler(void);

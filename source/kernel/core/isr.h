@@ -1,4 +1,5 @@
-// https://github.com/nanobyte-dev/nanobyte_os/blob/videos/par#pragma once
+// https://github.com/nanobyte-dev/nanobyte_os/blob/videos/part9/src/kernel/arch/i686/isr.h
+#pragma once
 #include <stdint.h>
 
 typedef struct
