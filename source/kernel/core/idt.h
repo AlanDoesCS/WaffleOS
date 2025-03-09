@@ -34,6 +34,13 @@ void i686_IDT_DisableGate(int interrupt);
 #define PIC2_DATA_PORT 0xA1
 #define PIC_EOI 0x20
 
+#define ICW1_INIT         0x11
+#define ICW2_MASTER_OFFSET 0x20
+#define ICW2_SLAVE_OFFSET  0x28
+#define ICW3_MASTER        0x04
+#define ICW3_SLAVE         0x02
+#define ICW4_8086_MODE     0x01
+
 // PIC1
 #define IRQ0_BIT 0x01    // PIT
 #define IRQ1_BIT 0x02    // Keyboard
