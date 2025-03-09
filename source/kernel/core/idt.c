@@ -96,17 +96,17 @@ void init_idt(void) {
 #define ALL_IRQ_MASK 0xFF
 void init_pic(void) { // remap PIC
     // Start the initialization sequence for both PICs
-    x86_outb(PIC1_CMD_PORT, 0x11);
-    x86_outb(PIC2_CMD_PORT, 0x11);
+    x86_outb(PIC1_CMD_PORT, ICW1_INIT);
+    x86_outb(PIC2_CMD_PORT, ICW1_INIT);
     // Set the offsets for the PICs
-    x86_outb(PIC1_DATA_PORT, 0x20);
-    x86_outb(PIC2_DATA_PORT, 0x28);
+    x86_outb(PIC1_DATA_PORT, ICW2_MASTER_OFFSET);
+    x86_outb(PIC2_DATA_PORT, ICW2_SLAVE_OFFSET);
     // Tell the PICs about their cascade
-    x86_outb(PIC1_DATA_PORT, 0x04);    // master
-    x86_outb(PIC2_DATA_PORT, 0x02);    // slave
+    x86_outb(PIC1_DATA_PORT, ICW3_MASTER);    // master
+    x86_outb(PIC2_DATA_PORT, ICW3_SLAVE);    // slave
     // Set PICs to operate in 8086/88 mode
-    x86_outb(PIC1_DATA_PORT, 0x01);
-    x86_outb(PIC2_DATA_PORT, 0x01);
+    x86_outb(PIC1_DATA_PORT, ICW4_8086_MODE);
+    x86_outb(PIC2_DATA_PORT, ICW4_8086_MODE);
 
     // Mask all IRQs except IRQ2 (cascade)
     uint8_t master_mask = ALL_IRQ_MASK;
