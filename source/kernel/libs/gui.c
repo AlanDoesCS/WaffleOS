@@ -15,7 +15,6 @@ static uint8_t *back_buffer = NULL;
 
 void init_gui(void) {
     init_pit();
-    .
     back_buffer = (uint8_t *)malloc(g_SCREEN_WIDTH * g_SCREEN_HEIGHT * g_BYTES_PER_PIXEL);
     if (!back_buffer) {
         // Allocation error
