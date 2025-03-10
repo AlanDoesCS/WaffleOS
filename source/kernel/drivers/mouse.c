@@ -8,7 +8,8 @@
 #include "../core/x86.h"
 #include "../core/stdio.h"
 #include "../core/kernel.h"
-#include "display.h"  // For g_SCREEN_WIDTH and g_SCREEN_HEIGHT
+#include "../libs/math.h"
+#include "display.h"
 
 // global mouse state
 volatile MouseState mouse_state = { .x = 160, .y = 100, .buttons = 0 };
@@ -77,8 +78,10 @@ void mouse_handler(void)
         mouse_state.buttons = mouse_bytes[0] & 0x07;
         int8_t x_move = (int8_t)mouse_bytes[1];
         int8_t y_move = (int8_t)mouse_bytes[2];
-        mouse_state.x += x_move;
-        mouse_state.y -= y_move;
+
+        mouse_state.x = clamp(mouse_state.x + x_move, 0, g_SCREEN_WIDTH - 1);
+        mouse_state.y = clamp(mouse_state.y - y_move, 0, g_SCREEN_HEIGHT - 1);
+
         mouse_cycle = 0;
     }
 

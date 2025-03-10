@@ -24,7 +24,10 @@ void init_fpu() {
     printf("[FPU] FPU enabled\r\n");
 }
 
-
+// Clamp a value to a range (inclusive). i.e. for any value ∈ ℤ, clamp(value, min, max) ∈ [min, max]
+int clamp(int value, int min, int max) {
+    return (value < min) ? min : ((value > max) ? max : value);
+}
 
 static inline void set_fpu_control_word(uint16_t control_word) {
     __asm__ __volatile__("fldcw %0;"::"m"(control_word));

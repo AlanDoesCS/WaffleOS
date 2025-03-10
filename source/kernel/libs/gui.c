@@ -1,7 +1,9 @@
 #include "gui.h"
 #include "../drivers/display.h"
-#include "../drivers/cursor.h"
+#include "icons.h"
+#include "cursor.h"
 #include "../timers/timer.h"
+#include "string.h"
 #include <stdint.h>
 #include <stddef.h>
 #include <memory.h>
@@ -9,14 +11,14 @@
 // Back buffer pointer.
 static uint8_t *back_buffer = NULL;
 
-// Allocate the back buffer. For mode 320x200 with 1 byte per pixel, that's 320*200 bytes.
+// GUI rendering Functions ---------------------------------------------------------------------------------------------
+
 void init_gui(void) {
-    // Initialize the PIT if you need it.
     init_pit();
-    // Allocate memory for the back buffer.
+    .
     back_buffer = (uint8_t *)malloc(g_SCREEN_WIDTH * g_SCREEN_HEIGHT * g_BYTES_PER_PIXEL);
     if (!back_buffer) {
-        // Handle allocation error.
+        // Allocation error
     }
 }
 
@@ -27,16 +29,11 @@ static void clear_back_buffer(uint32_t color) {
 }
 
 static void flip_buffer(void) {
-    // Copy the entire back buffer to the framebuffer.
-    // Note: Make sure that 'framebuffer' is accessible; if it is static in display.c, consider adding a blit function there.
     memcpy((void*)display_get_framebuffer(), back_buffer, g_SCREEN_WIDTH * g_SCREEN_HEIGHT * g_BYTES_PER_PIXEL);
 }
 
 // Draw the GUI to the back buffer.
 static void draw_gui_to_buffer(void) {
-    // For these drawing functions to work on the back buffer, you can temporarily set the drawing target.
-    // One approach is to modify put_pixel() to check a global flag or pointer (target_buffer) instead of drawing directly to framebuffer.
-    // Here, we'll assume we've modified our drawing routines to draw into a pointer "current_buffer".
 
     // Set our drawing target to the back buffer.
     set_drawing_target(back_buffer);
@@ -54,10 +51,25 @@ static void draw_gui_to_buffer(void) {
     draw_rect(0, 180, 319, 199, BLUE_16);
     draw_scaled_string(5, 185, "Start", WHITE_16, 0.8f);
 
+    draw_all_windows();
+
+    // DEBUG: draw icons -----------------------------------------------------------------------------------------------
+    draw_rect(9, 24, 70, 10, WHITE_16); // Draw background
+
+    // test draw icons
+    draw_icon(10, 25, util_icons[SMILEY]);
+    draw_icon(20, 25, util_icons[FROWNY]);
+    draw_icon(30, 25, util_icons[HEART]);
+    draw_icon(40, 25, util_icons[FLOPPY]);
+    draw_icon(50, 25, util_icons[INFO]);
+    draw_icon(60, 25, util_icons[ERROR]);
+    draw_icon(70, 25, util_icons[GEAR]);
+    // -----------------------------------------------------------------------------------------------------------------
+
     // Draw the cursor last so it appears on top.
     draw_cursor();
 
-    // Reset drawing target to the default framebuffer if needed.
+    // Reset drawing target to the default framebuffer
     set_drawing_target(NULL);
 }
 
@@ -71,4 +83,122 @@ void render_gui(void) {
 
     // Blit the back buffer to the actual framebuffer.
     flip_buffer();
+}
+
+// Window Managing -----------------------------------------------------------------------------------------------------
+static Window* windows[MAX_WINDOWS];
+static int window_count = 0;
+
+Window* create_window(int x, int y, int width, int height, uint32_t bg_color, const char *title) {
+    if (window_count >= MAX_WINDOWS) {
+        return NULL;  // No more windows available.
+    }
+    Window *win = (Window*)malloc(sizeof(Window));
+    if (!win)
+        return NULL;
+
+    win->x = x;
+    win->y = y;
+    win->width = width;
+    win->height = height;
+    win->bg_color = bg_color;
+    strncpy(win->title, title, sizeof(win->title) - 1);
+    win->title[sizeof(win->title) - 1] = '\0';
+    win->is_active = true;
+
+    windows[window_count++] = win;
+    return win;
+}
+
+// Destroy a window and free its memory.
+void destroy_window(Window *win) {
+    if (!win)
+        return;
+    int index = -1;
+    for (int i = 0; i < window_count; i++) {
+        if (windows[i] == win) {
+            index = i;
+            break;
+        }
+    }
+    if (index == -1)
+        return;
+
+    free(win);
+    // Shift remaining windows down.
+    for (int i = index; i < window_count - 1; i++) {
+        windows[i] = windows[i + 1];
+    }
+    window_count--;
+}
+
+// Move an existing window to a new (x, y) position.
+void move_window(Window *win, int new_x, int new_y) {
+    if (win) {
+        win->x = new_x;
+        win->y = new_y;
+    }
+}
+
+// Resize an existing window.
+void resize_window(Window *win, int new_width, int new_height) {
+    if (win) {
+        win->width = new_width;
+        win->height = new_height;
+    }
+}
+
+// Bring the given window to the front (draw it last so it appears on top).
+void bring_to_front(Window *win) {
+    if (!win)
+        return;
+    int index = -1;
+    for (int i = 0; i < window_count; i++) {
+        if (windows[i] == win) {
+            index = i;
+            break;
+        }
+    }
+    if (index == -1 || index == window_count - 1)
+        return; // Already on top.
+
+    // Shift the window forward.
+    for (int i = index; i < window_count - 1; i++) {
+        windows[i] = windows[i + 1];
+    }
+    windows[window_count - 1] = win;
+}
+
+// Draw a single window.
+void draw_window(Window *win) {
+    if (!win)
+        return;
+
+    // Draw window background.
+    draw_rect(win->x, win->y, win->width, win->height, win->bg_color);
+
+    // Draw window border (using a 1-pixel white border).
+    for (int i = 0; i < win->width; i++) {
+        put_pixel(win->x + i, win->y, WHITE_16);                    // Top border
+        put_pixel(win->x + i, win->y + win->height - 1, WHITE_16);     // Bottom border
+    }
+    for (int j = 0; j < win->height; j++) {
+        put_pixel(win->x, win->y + j, WHITE_16);                     // Left border
+        put_pixel(win->x + win->width - 1, win->y + j, WHITE_16);      // Right border
+    }
+
+    // Draw the title bar.
+    int title_bar_height = 16;  // Fixed height for the title bar.
+    draw_rect(win->x, win->y, win->width, title_bar_height, BLUE_16);
+    draw_string(win->x + 4, win->y + 4, win->title, WHITE_16);
+}
+
+// Draw all active windows.
+void draw_all_windows(void) {
+    // Draw windows in order (earlier windows are drawn first, later ones on top).
+    for (int i = 0; i < window_count; i++) {
+        if (windows[i]->is_active) {
+            draw_window(windows[i]);
+        }
+    }
 }
