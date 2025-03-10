@@ -1,7 +1,7 @@
 # WaffleOS
 A Unix-like open source operating system written in NASM and C, with the goal of demystifying how operating systems work.
 
-<img src="https://github.com/user-attachments/assets/0553e678-e8b8-4853-ad1e-6e97e162c5fd" alt="drawing" height="256"/> <img src="https://github.com/user-attachments/assets/4fd84e48-94bf-4ded-829d-f6726b7cd01d" alt="CLI" height="256"/> <img src="https://github.com/user-attachments/assets/ae8c7384-1af6-4e50-82bc-323e09ab6bf5" alt="CLI" height="256"/>
+<img src="https://github.com/user-attachments/assets/0553e678-e8b8-4853-ad1e-6e97e162c5fd" alt="drawing" height="200"/> <img src="https://github.com/user-attachments/assets/be56b9a4-c1fe-4710-b60d-4dc30a516874" alt="CLI" height="200"/> <img src="https://github.com/user-attachments/assets/cf378052-a6c2-4748-a15d-c7168cb37a6b" alt="GUI" height="200"/>
 
 ![Hack Club arcade 2024 finalist](https://img.shields.io/badge/Hack%20Club%20arcade%202024-showcase%20finalist-gold?logo=https%3A%2F%2Fassets.hackclub.com%2Ficon-rounded.png&logoSize=auto&labelColor=orange)
 ![License: GPL](https://img.shields.io/badge/License-GPL-blue.svg)
