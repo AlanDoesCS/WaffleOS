@@ -6,7 +6,7 @@ vgaromimage: file=/usr/local/share/bochs/VGABIOS-lgpl-latest
 boot: floppy  # Boot from floppy
 floppya: 1_44=build/main_floppy.img, status=inserted
 log: build/bochs.log
-clock: sync=realtime
+clock: sync=realtime, time0=local
 mouse: type=ps2, enabled=1
 display_library: sdl2
 keyboard: keymap=/usr/local/share/bochs/keymaps/sdl2-pc-de.map
