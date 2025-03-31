@@ -1,6 +1,6 @@
 megs: 32  # Memory size in Megabytes
-cpu: count=1, ips=50000000
-vga: extension=vbe, update_freq=5, realtime=1
+cpu: count=1, ips=5000000
+vga: extension=vbe
 romimage: file=/usr/local/share/bochs/BIOS-bochs-latest
 vgaromimage: file=/usr/local/share/bochs/VGABIOS-lgpl-latest
 boot: floppy  # Boot from floppy
